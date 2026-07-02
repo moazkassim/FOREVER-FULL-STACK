@@ -2,8 +2,16 @@ import { v2 as cloudinary } from "cloudinary";
 import type { Request, Response } from "express";
 
 import productModel from "../models/productModel.js";
+import type {
+  AddProductSchema,
+  GetSingleProductSchema,
+  RemoveProductSchema,
+} from "../validations/product.validation.js";
 // function for add product
-const addProduct = async (req: Request, res: Response) => {
+const addProduct = async (
+  req: Request<{}, {}, AddProductSchema>,
+  res: Response,
+) => {
   try {
     const {
       name,
@@ -56,10 +64,9 @@ const addProduct = async (req: Request, res: Response) => {
 
     await product.save();
     res.json({ success: true, message: "product added" });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Something went wrong";
-    res.json({ success: false, message });
+  } catch (error: any) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
   }
 };
 
@@ -68,35 +75,38 @@ const listProduct = async (_req: Request, res: Response) => {
   try {
     const products = await productModel.find({});
     res.json({ success: true, products });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Something went wrong";
-    res.json({ success: false, message });
+  } catch (error: any) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
   }
 };
 
 // function for remover  product
-const removeProduct = async (req: Request, res: Response) => {
+const removeProduct = async (
+  req: Request<{}, {}, RemoveProductSchema>,
+  res: Response,
+) => {
   try {
     await productModel.findByIdAndDelete(req.body.id);
     res.json({ success: true, message: "product removed" });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Something went wrong";
-    res.json({ success: false, message });
+  } catch (error: any) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
   }
 };
 
 // function for single  product
-const singleProduct = async (req: Request, res: Response) => {
+const singleProduct = async (
+  req: Request<{}, {}, GetSingleProductSchema>,
+  res: Response,
+) => {
   try {
     const { productId } = req.body;
     const product = await productModel.findById(productId);
     res.json({ success: true, product });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Something went wrong";
-    res.json({ success: false, message });
+  } catch (error: any) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
   }
 };
 

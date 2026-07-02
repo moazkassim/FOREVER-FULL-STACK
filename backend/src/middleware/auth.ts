@@ -5,12 +5,9 @@ export const authUser = async (
   res: Response,
   next: NextFunction,
 ) => {
-
   const token = req.headers.token as string | undefined;
   if (!token) {
-    return res
-      .status(401)
-      .json({ message: "No token, authorization denied, Login again" });
+    return res.json({ message: "No token, authorization denied, Login again" });
   }
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
@@ -20,11 +17,9 @@ export const authUser = async (
     const token_decoded = jwt.verify(token, jwtSecret) as JwtPayload;
     req.body.userId = token_decoded.id;
     next();
-  } catch (error) {
+  } catch (error: any) {
     console.log(error);
-    const message =
-      error instanceof Error ? error.message : "Something went wrong";
-    res.status(401).json({ success: false, message });
+    res.json({ success: false, message: error.message });
   }
 };
 export default authUser;

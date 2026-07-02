@@ -1,9 +1,10 @@
-import  { useContext } from "react";
+import { useContext } from "react";
 import { ShopContext } from "../context/ShopContext";
 import Title from "../components/Title";
 import { useState } from "react";
 import { useEffect } from "react";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 interface Product {
   _id: string;
@@ -50,8 +51,9 @@ const Orders = () => {
       });
 
       setOrderData(allOrdersItem.reverse());
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
+      toast.error(error.message);
     }
   };
   useEffect(() => {

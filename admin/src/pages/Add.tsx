@@ -4,11 +4,11 @@ import { backendUrl } from "../App";
 import axios from "axios";
 import type { FormEvent, ChangeEvent } from "react";
 import { toast } from "react-toastify";
-interface LoginProps {
+interface AddProps {
   token: string;
 }
 
-const Add = ({ token }: LoginProps) => {
+const Add = ({ token }: AddProps) => {
   const [image1, setImage1] = useState<File | null>(null);
   const [image2, setImage2] = useState<File | null>(null);
   const [image3, setImage3] = useState<File | null>(null);
@@ -37,7 +37,7 @@ const Add = ({ token }: LoginProps) => {
       image2 && formData.append("image2", image2);
       image3 && formData.append("image3", image3);
       image4 && formData.append("image4", image4);
-
+      console.log(Array.from(formData.entries()));
       const response = await axios.post(
         backendUrl + "/api/product/add",
         formData,
@@ -62,10 +62,9 @@ const Add = ({ token }: LoginProps) => {
       } else {
         toast.error(response.data.message);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
-      const message =
-        error instanceof Error ? error.message : "Something went wrong";
+      const message = error.message;
       toast.error(message);
     }
   };

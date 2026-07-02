@@ -1,7 +1,15 @@
+import type {
+  AddToCartInput,
+  GetUserCartInput,
+  UpdateCartInput,
+} from "../validations/cart.validation.js";
 import userModel from "../models/userModel.js";
 import type { Request, Response } from "express";
 // add products to cart
-const addToCart = async (req: Request, res: Response) => {
+const addToCart = async (
+  req: Request<{}, {}, AddToCartInput>,
+  res: Response,
+) => {
   try {
     const { userId, itemId, size } = req.body;
     const userData = await userModel.findById(userId);
@@ -19,14 +27,16 @@ const addToCart = async (req: Request, res: Response) => {
     }
     await userModel.findByIdAndUpdate(userId, { cartData });
     res.json({ success: true, message: "Added to cart" });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Something went wrong";
-    res.json({ success: false, message });
+  } catch (error: any) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
   }
 };
 // update cart
-const updateCart = async (req: Request, res: Response) => {
+const updateCart = async (
+  req: Request<{}, {}, UpdateCartInput>,
+  res: Response,
+) => {
   try {
     const { userId, itemId, size, quantity } = req.body;
     const userData = await userModel.findById(userId);
@@ -41,24 +51,28 @@ const updateCart = async (req: Request, res: Response) => {
       });
       res.json({ success: true, message: "item deleted" });
     }
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Something went wrong";
-    res.json({ success: false, message });
+  } catch (error: any) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
   }
 };
 // get user cart data
-const getUserCart = async (req: Request, res: Response) => {
+const getUserCart = async (
+  req: Request<{}, {}, GetUserCartInput>,
+  res: Response,
+) => {
   try {
     const { userId } = req.body;
+    console.log("user id", userId);
     const userData = await userModel.findById(userId);
-    console.log(userData);
+
+    console.log("user data", userData);
     let cartData = await userData.cartData;
+    console.log("cart data", cartData);
     res.json({ success: true, cartData });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Something went wrong";
-    res.json({ success: false, message });
+  } catch (error: any) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
   }
 };
 export { addToCart, updateCart, getUserCart };

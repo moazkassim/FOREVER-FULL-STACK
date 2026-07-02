@@ -31,11 +31,10 @@ const adminAuth = async (req: Request, res: Response, next: NextFunction) => {
     }
 
     next();
-  } catch (error) {
+  } catch (error: any) {
     console.log(error);
-    const message =
-      error instanceof Error ? error.message : "Something went wrong";
-    res.json({ success: false, message });
+
+    res.json({ success: false, message: error.message });
   }
 };
 export default adminAuth;

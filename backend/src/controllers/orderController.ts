@@ -2,6 +2,12 @@ import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 import Stripe from "stripe";
 import type { Request, Response } from "express";
+import type {
+  PlaceOrderInput,
+  UpdateStatusInput,
+  UserOrdersInput,
+  VerifyStripeInput,
+} from "../validations/order.validation.js";
 
 //global variables
 const currency = "usd";
@@ -15,7 +21,10 @@ if (!stripeKey) {
 const stripe = new Stripe(stripeKey);
 
 // Placing order using COD method
-const placeOrder = async (req: Request, res: Response) => {
+const placeOrder = async (
+  req: Request<{}, {}, PlaceOrderInput>,
+  res: Response,
+) => {
   try {
     const { userId, items, amount, address } = req.body;
     const orderData = {
@@ -31,15 +40,17 @@ const placeOrder = async (req: Request, res: Response) => {
     await newOrder.save();
     await userModel.findByIdAndDelete(userId, { cartData: {} });
     res.json({ success: true, message: "Order Placed" });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Something went wrong";
-    res.json({ success: false, message });
+  } catch (error: any) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
   }
 };
 
 // Placing order using Stripe method
-const placeOrderStripe = async (req: Request, res: Response) => {
+const placeOrderStripe = async (
+  req: Request<{}, {}, PlaceOrderInput>,
+  res: Response,
+) => {
   try {
     const { userId, items, amount, address } = req.body;
     const { origin } = req.headers;
@@ -81,14 +92,16 @@ const placeOrderStripe = async (req: Request, res: Response) => {
       mode: "payment",
     });
     res.json({ success: true, session_url: session.url });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Something went wrong";
-    res.json({ success: false, message });
+  } catch (error: any) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
   }
 };
 // verify stipe
-const verifyStripe = async (req: Request, res: Response) => {
+const verifyStripe = async (
+  req: Request<{}, {}, VerifyStripeInput>,
+  res: Response,
+) => {
   const { orderId, success, userId } = req.body;
   try {
     if (success === "true") {
@@ -99,10 +112,9 @@ const verifyStripe = async (req: Request, res: Response) => {
       await orderModel.findByIdAndDelete(orderId);
       res.json({ success: false });
     }
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Something went wrong";
-    res.json({ success: false, message });
+  } catch (error: any) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
   }
 };
 
@@ -111,35 +123,39 @@ const allOrders = async (_req: Request, res: Response) => {
   try {
     const orders = await orderModel.find({});
     res.json({ success: true, orders });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Something went wrong";
-    res.json({ success: false, message });
+  } catch (error: any) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
   }
 };
 
 // User order data for frontend
-const userOrders = async (req: Request, res: Response) => {
+const userOrders = async (
+  req: Request<{}, {}, UserOrdersInput>,
+  res: Response,
+) => {
   try {
     const { userId } = req.body;
     const orders = await orderModel.find({ userId });
     res.json({ success: true, orders });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Something went wrong";
-    res.json({ success: false, message });
+  } catch (error: any) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
   }
 };
 
 // update order status from admin panel
-const updateStatus = async (req: Request, res: Response) => {
+const updateStatus = async (
+  req: Request<{}, {}, UpdateStatusInput>,
+  res: Response,
+) => {
   try {
     const { orderId, status } = req.body;
     await orderModel.findByIdAndUpdate(orderId, { status });
     res.json({ success: true, message: "status updated" });
-  } catch (error) {
+  } catch (error: any) {
     console.log(error);
-    res.json({ success: true, message: "status updated" });
+    res.json({ success: false, message: error.message });
   }
 };
 

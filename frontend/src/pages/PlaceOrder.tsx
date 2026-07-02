@@ -101,11 +101,9 @@ const PlaceOrder = () => {
             } else {
               toast.error(response.data.message);
             }
-          } catch (error) {
+          } catch (error: any) {
             console.log(error);
-            const message =
-              error instanceof Error ? error.message : "Something went wrong";
-            toast.error(message);
+            toast.error(error.message);
           }
           break;
         case "razorpay":
@@ -122,16 +120,18 @@ const PlaceOrder = () => {
             } else {
               toast.error(responseStripe.data.message);
             }
-          } catch (error) {
+          } catch (error: any) {
             console.log(error);
+            toast.error(error.message);
           }
           break;
 
         default:
           break;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
+      toast.error(error.message);
     }
   };
   return (

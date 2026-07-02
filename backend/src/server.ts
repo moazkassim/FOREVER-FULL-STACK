@@ -7,6 +7,7 @@ import userRouter from "./routes/userRoute.js";
 import productRouter from "./routes/productRoute.js";
 import cartRouter from "./routes/cartRoute.js";
 import orderRouter from "./routes/orderRoute.js";
+import corsOptions from "./config/cors.js";
 
 // App config
 
@@ -16,9 +17,8 @@ connectDB();
 connectCloudinary();
 
 // Middle wares
-
 app.use(express.json());
-app.use(cors());
+app.use(cors(corsOptions));
 
 // api endpoints
 app.get("/", (_req: Request, res: Response) => {

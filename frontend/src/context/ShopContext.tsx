@@ -152,8 +152,9 @@ const ShopContextProvider = (props: ShopContextProviderProps) => {
           if (cartItems[items][item] > 0 && itemInfo) {
             totalAmount += itemInfo.price * cartItems[items][item];
           }
-        } catch (error) {
+        } catch (error: any) {
           console.log(error);
+          toast.error(error.message);
         }
       }
     }
@@ -169,8 +170,9 @@ const ShopContextProvider = (props: ShopContextProviderProps) => {
       } else {
         toast.error(response.data.message);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
+      toast.error(error.message);
     }
   };
   useEffect(() => {
