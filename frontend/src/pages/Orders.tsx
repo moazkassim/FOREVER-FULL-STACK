@@ -3,8 +3,9 @@ import { ShopContext } from "../context/ShopContext";
 import Title from "../components/Title";
 import { useState } from "react";
 import { useEffect } from "react";
-import axios from "axios";
 import { toast } from "react-toastify";
+import api from "../lib/axios";
+import { getErrorMessage } from "../utils/getErrorMessage";
 
 interface Product {
   _id: string;
@@ -27,18 +28,14 @@ interface OrderItem extends Product {
 }
 
 const Orders = () => {
-  const { backendUrl, token, currency } = useContext(ShopContext);
+  const { token, currency } = useContext(ShopContext);
   const [orderData, setOrderData] = useState<OrderItem[]>([]);
   const loadOrderData = async () => {
     try {
       if (!token) {
         return null;
       }
-      const response = await axios.post(
-        backendUrl + "/api/order/userorders",
-        {},
-        { headers: { token } },
-      );
+      const response = await api.post("/api/order/userorders", {});
       let allOrdersItem: OrderItem[] = [];
       response.data.orders.map((order: any) => {
         order.items.map((item: any) => {
@@ -51,9 +48,9 @@ const Orders = () => {
       });
 
       setOrderData(allOrdersItem.reverse());
-    } catch (error: any) {
+    } catch (error) {
       console.log(error);
-      toast.error(error.message);
+      toast.error(getErrorMessage(error));
     }
   };
   useEffect(() => {

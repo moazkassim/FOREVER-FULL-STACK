@@ -3,6 +3,8 @@ import {
   loginUser,
   registerUser,
   adminLogin,
+  refreshToken,
+  logoutUser,
 } from "../controllers/userController.js";
 import { validate } from "../middleware/validate.middleware.js";
 import {
@@ -14,4 +16,6 @@ const userRouter = express.Router();
 userRouter.post("/register", validate(registerUserSchema), registerUser);
 userRouter.post("/login", validate(loginUserSchema), loginUser);
 userRouter.post("/admin", validate(adminLoginSchema), adminLogin);
+userRouter.post("/refresh", refreshToken);
+userRouter.post("/logout", logoutUser);
 export default userRouter;

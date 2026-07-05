@@ -1,17 +1,13 @@
 import userModel from "../models/userModel.js";
 import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import validator from "validator";
+import jwt, { type JwtPayload } from "jsonwebtoken";
 import type {
   AdminLoginInput,
   LoginUserInput,
   RegisterUserInput,
 } from "../validations/user.validation.js";
 
-// logic for allowing  user to create an account or login in to the website
-
-//route for user login
 const loginUser = async (
   req: Request<{}, {}, LoginUserInput>,
   res: Response,
@@ -19,11 +15,10 @@ const loginUser = async (
   try {
     const { email, password } = req.body;
 
-    //check if user exist
     const user = await userModel.findOne({ email });
 
     if (!user) {
-      res.json({
+      return res.json({
         success: false,
         message: "User doesn't exist",
       });
@@ -36,8 +31,24 @@ const loginUser = async (
       });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string);
-    res.json({ success: true, token });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, {
+      expiresIn: "15m",
+    });
+    const refreshToken = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET as string,
+      {
+        expiresIn: "30d",
+      },
+    );
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.json({ success: true, token });
   } catch (error) {
     console.error(
       "Login error:",
@@ -75,7 +86,25 @@ const registerUser = async (
     const newUser = new userModel({ name, email, password: hashedPassword });
     const user = await newUser.save();
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string);
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, {
+      expiresIn: "15m",
+    });
+
+    const refreshToken = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET as string,
+      {
+        expiresIn: "30d",
+      },
+    );
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
     res.json({ success: true, token });
   } catch (error: any) {
     console.log(error);
@@ -109,4 +138,49 @@ const adminLogin = async (
   }
 };
 
-export { loginUser, registerUser, adminLogin };
+const refreshToken = async (req: Request, res: Response) => {
+  const refreshToken = req.cookies.refreshToken as string | undefined;
+
+  if (!refreshToken) {
+    return res
+      .status(401)
+      .json({ success: false, message: "No refresh token" });
+  }
+
+  try {
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.JWT_SECRET as string,
+    ) as JwtPayload;
+    const token = jwt.sign(
+      { id: decoded.id },
+      process.env.JWT_SECRET as string,
+      {
+        expiresIn: "15m",
+      },
+    );
+    return res.json({ success: true, token: token });
+  } catch {
+    return res.status(401).json({
+      success: false,
+      message: "Refresh token expired, please login again",
+    });
+  }
+};
+
+const logoutUser = async (_req: Request, res: Response) => {
+  try {
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+    return res.json({ success: true, message: "Logged out" });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Something went wrong";
+    return res.status(500).json({ success: false, message });
+  }
+};
+
+export { loginUser, registerUser, adminLogin, refreshToken, logoutUser };

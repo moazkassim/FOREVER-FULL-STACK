@@ -38,7 +38,7 @@ const placeOrder = async (
     };
     const newOrder = new orderModel(orderData);
     await newOrder.save();
-    await userModel.findByIdAndDelete(userId, { cartData: {} });
+    await userModel.findByIdAndUpdate(userId, { cartData: {} });
     res.json({ success: true, message: "Order Placed" });
   } catch (error: any) {
     console.log(error);
@@ -107,6 +107,7 @@ const verifyStripe = async (
     if (success === "true") {
       await orderModel.findByIdAndUpdate(orderId, { payment: true });
       await userModel.findByIdAndUpdate(userId, { cartData: {} });
+
       res.json({ success: true });
     } else {
       await orderModel.findByIdAndDelete(orderId);
@@ -151,7 +152,16 @@ const updateStatus = async (
 ) => {
   try {
     const { orderId, status } = req.body;
-    await orderModel.findByIdAndUpdate(orderId, { status });
+
+    const updatedOrder = await orderModel.findByIdAndUpdate(orderId, {
+      status,
+    });
+    if (!updatedOrder) {
+      return res.status(404).json({
+        success: false,
+        message: "No order to update",
+      });
+    }
     res.json({ success: true, message: "status updated" });
   } catch (error: any) {
     console.log(error);

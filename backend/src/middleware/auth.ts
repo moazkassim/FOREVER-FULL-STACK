@@ -5,9 +5,14 @@ export const authUser = async (
   res: Response,
   next: NextFunction,
 ) => {
-  const token = req.headers.token as string | undefined;
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith("Bearer ")
+    ? authHeader.slice("Bearer ".length)
+    : undefined;
   if (!token) {
-    return res.json({ message: "No token, authorization denied, Login again" });
+    return res
+      .status(401)
+      .json({ success: false, message: "No token, authorization denied, Login again" });
   }
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
@@ -19,7 +24,7 @@ export const authUser = async (
     next();
   } catch (error: any) {
     console.log(error);
-    res.json({ success: false, message: error.message });
+    return res.status(401).json({ success: false, message: error.message });
   }
 };
 export default authUser;

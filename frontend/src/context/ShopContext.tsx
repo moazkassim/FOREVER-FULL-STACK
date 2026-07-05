@@ -2,7 +2,9 @@ import { createContext, useEffect, useState } from "react";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api, { setAccessToken } from "../lib/axios";
+import { getErrorMessage } from "../utils/getErrorMessage";
+
 interface Product {
   _id: string;
   name: string;
@@ -34,10 +36,10 @@ interface ShopContextType {
   updateQuantity: (itemId: string, size: string, quantity: number) => void;
   getCartAmount: () => number;
   navigate: (path: string) => void;
-  backendUrl: string;
   token: string;
   setCartItems: Dispatch<SetStateAction<CartData>>;
   setToken: Dispatch<SetStateAction<string>>;
+  sessionLoading: boolean;
 }
 export const ShopContext = createContext<ShopContextType>(
   {} as ShopContextType,
@@ -50,12 +52,12 @@ interface ShopContextProviderProps {
 const ShopContextProvider = (props: ShopContextProviderProps) => {
   const currency = "$";
   const delivery_fee = 10;
-  const backendUrl = import.meta.env.VITE_BACKEND_URL as string;
   const [search, setSearch] = useState<string>("");
   const [showSearch, setShowSearch] = useState<boolean>(false);
   const [cartItems, setCartItems] = useState<CartData>({});
   const [products, setProducts] = useState<Product[]>([]);
   const [token, setToken] = useState<string>("");
+  const [sessionLoading, setSessionLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 
   const addToCart = async (itemId: string, size: string): Promise<void> => {
@@ -63,32 +65,23 @@ const ShopContextProvider = (props: ShopContextProviderProps) => {
       toast.error("Select product size");
       return;
     }
-    let cartData = structuredClone(cartItems);
-    if (cartData[itemId]) {
-      if (cartData[itemId][size]) {
-        cartData[itemId][size] += 1;
-      } else {
-        cartData[itemId][size] = 1;
-      }
-    } else {
-      cartData[itemId] = {};
-      cartData[itemId][size] = 1;
-    }
-
-    setCartItems(cartData);
-
     if (token) {
       try {
-        await axios.post(
-          backendUrl + "/api/cart/add",
-          { itemId, size },
-          { headers: { token } },
-        );
+        await api.post("/api/cart/add", { itemId, size });
       } catch (error: any) {
         console.log(error);
-        toast.error(error.message);
+        toast.error(getErrorMessage(error));
       }
     }
+    setCartItems((prev) => {
+      const cartData = structuredClone(prev);
+      if (cartData[itemId]) {
+        cartData[itemId][size] = (cartData[itemId][size] ?? 0) + 1;
+      } else {
+        cartData[itemId] = { [size]: 1 };
+      }
+      return cartData;
+    });
   };
   const getCartCount = () => {
     let totalCount = 0;
@@ -105,7 +98,8 @@ const ShopContextProvider = (props: ShopContextProviderProps) => {
     itemId: string,
     size: string,
     quantity: number,
-  ) => {
+  ): Promise<void> => {
+    if (!cartItems[itemId]) return;
     let cartData = structuredClone(cartItems || {});
 
     cartData[itemId][size] = quantity;
@@ -113,40 +107,30 @@ const ShopContextProvider = (props: ShopContextProviderProps) => {
     setCartItems(cartData);
     if (token) {
       try {
-        await axios.post(
-          backendUrl + "/api/cart/update",
-          { itemId, size, quantity },
-          { headers: { token } },
-        );
+        await api.post("/api/cart/update", { itemId, size, quantity });
       } catch (error: any) {
         console.log(error);
-        toast.error(error.message);
+        toast.error(getErrorMessage(error));
       }
     }
   };
 
-  const getUserCart = async (token: string) => {
+  const getUserCart = async () => {
     try {
-      const response = await axios.post(
-        backendUrl + "/api/cart/get",
-        {},
-        {
-          headers: { token },
-        },
-      );
+      const response = await api.post("/api/cart/get", {});
       if (response.data.success) {
         setCartItems(response.data.cartData);
       }
     } catch (error: any) {
       console.log(error);
-      toast.error(error.message);
+      toast.error(getErrorMessage(error));
     }
   };
   const getCartAmount = () => {
     let totalAmount = 0;
     for (const items in cartItems) {
       let itemInfo = products.find((product) => product._id === items);
-
+      if (!itemInfo) continue;
       for (const item in cartItems[items]) {
         try {
           if (cartItems[items][item] > 0 && itemInfo) {
@@ -163,7 +147,7 @@ const ShopContextProvider = (props: ShopContextProviderProps) => {
   };
   const getProductsData = async () => {
     try {
-      const response = await axios.get(backendUrl + "/api/product/list");
+      const response = await api.get("/api/product/list");
 
       if (response.data.success) {
         setProducts(response.data.products);
@@ -172,17 +156,31 @@ const ShopContextProvider = (props: ShopContextProviderProps) => {
       }
     } catch (error: any) {
       console.log(error);
-      toast.error(error.message);
+      toast.error(getErrorMessage(error));
     }
   };
   useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        const { data } = await api.post(
+          "/api/user/refresh",
+          {},
+          { withCredentials: true },
+        );
+        if (data.success) {
+          setToken(data.token);
+          setAccessToken(data.token);
+          await getUserCart();
+        }
+      } catch {
+        // Refresh token expired or doesn't exist — user needs to log in
+        setToken("");
+      } finally {
+        setSessionLoading(false);
+      }
+    };
+    restoreSession();
     getProductsData();
-  }, []);
-  useEffect(() => {
-    if (!token && localStorage.getItem("token")) {
-      setToken(localStorage.getItem("token") as string);
-      getUserCart(localStorage.getItem("token") as string);
-    }
   }, []);
 
   const value = {
@@ -199,12 +197,21 @@ const ShopContextProvider = (props: ShopContextProviderProps) => {
     updateQuantity,
     getCartAmount,
     navigate,
-    backendUrl,
     token,
     setCartItems,
     setToken,
+    sessionLoading,
   };
 
+  if (sessionLoading) {
+    return (
+      <ShopContext.Provider value={value}>
+        <div className="flex items-center justify-center min-h-screen">
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </ShopContext.Provider>
+    );
+  }
   return (
     <ShopContext.Provider value={value}>{props.children}</ShopContext.Provider>
   );

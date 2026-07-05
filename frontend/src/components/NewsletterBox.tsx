@@ -1,4 +1,4 @@
-import React, { type FormEvent } from "react";
+import React from "react";
 
 const NewsletterBox = () => {
   const onSubmitHandler = (event: React.FormEvent<HTMLFormElement>): void => {

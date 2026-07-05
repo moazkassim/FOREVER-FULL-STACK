@@ -87,8 +87,30 @@ const removeProduct = async (
   res: Response,
 ) => {
   try {
-    await productModel.findByIdAndDelete(req.body.id);
-    res.json({ success: true, message: "product removed" });
+    const { id } = req.body;
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Product ID is required",
+      });
+    }
+
+    const deletedProduct = await productModel.findByIdAndDelete(id);
+
+    if (!deletedProduct) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found. It may have been already deleted.",
+      });
+    }
+    res.json({
+      success: true,
+      message: "Product removed successfully",
+      product: {
+        id: deletedProduct._id,
+        name: deletedProduct.name,
+      },
+    });
   } catch (error: any) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -103,6 +125,12 @@ const singleProduct = async (
   try {
     const { productId } = req.body;
     const product = await productModel.findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found.",
+      });
+    }
     res.json({ success: true, product });
   } catch (error: any) {
     console.log(error);

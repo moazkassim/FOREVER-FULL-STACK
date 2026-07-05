@@ -1,59 +1,61 @@
 import { useContext, useEffect, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
-import axios from "axios";
 import type { FormEvent } from "react";
 import { toast } from "react-toastify";
+import api, { setAccessToken } from "../lib/axios";
+import { getErrorMessage } from "../utils/getErrorMessage";
 
 const Login = () => {
   const [currentState, setCurrentState] = useState("Login");
-  const { token, setToken, navigate, backendUrl } = useContext(ShopContext);
+  const { sessionLoading, token, setToken, navigate } = useContext(ShopContext);
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    if (token) {
+      if (!token) return;
+      navigate("/");
+    }
+  }, [token, navigate]);
+  if (sessionLoading) return null;
+
   const onSubmitHandler = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
       if (currentState === "Sign Up") {
-        const response = await axios.post(backendUrl + "/api/user/register", {
+        const response = await api.post("/api/user/register", {
           name,
           email,
           password,
         });
         if (response.data.success) {
           setToken(response.data.token);
-          localStorage.setItem("token", response.data.token);
+          setAccessToken(response.data.token);
+          navigate("/");
         } else {
           toast.error(response.data.message);
         }
       } else {
-        const response = await axios.post(backendUrl + "/api/user/login", {
+        const response = await api.post("/api/user/login", {
           email,
           password,
         });
-        console.log(response.data);
+        
         if (response.data.success) {
           setToken(response.data.token);
-          localStorage.setItem("token", response.data.token);
+          setAccessToken(response.data.token);
+          navigate("/");
         } else {
           toast.error(response.data.message);
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       console.log(error);
-      toast.error(error.message);
+      toast.error(getErrorMessage(error));
     }
   };
-  useEffect(() => {
-    if (token) {
-      navigate("/");
-    }
-  }, [token]);
 
-  useEffect(() => {
-    if (!token && localStorage.getItem("token")) {
-      setToken(token);
-    }
-  }, []);
   return (
     <form
       onSubmit={onSubmitHandler}

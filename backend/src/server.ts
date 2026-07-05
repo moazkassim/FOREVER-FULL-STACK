@@ -8,11 +8,13 @@ import productRouter from "./routes/productRoute.js";
 import cartRouter from "./routes/cartRoute.js";
 import orderRouter from "./routes/orderRoute.js";
 import corsOptions from "./config/cors.js";
+import cookieParser from "cookie-parser"; // ← add this
 
 // App config
 
 const app: Express = express();
 const port = process.env.PORT || 4000;
+app.use(cookieParser());
 connectDB();
 connectCloudinary();
 

@@ -1,27 +1,34 @@
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext";
-import { useEffect } from "react";
-import axios from "axios";
+
 import { toast } from "react-toastify";
+import api from "../lib/axios";
+import { getErrorMessage } from "../utils/getErrorMessage";
 
 const Verify = () => {
-  const { navigate, token, setCartItems, backendUrl } = useContext(ShopContext);
+  const { navigate, token, setCartItems } = useContext(ShopContext);
   const [searchParams, _setSearchParams] = useSearchParams();
   const success = searchParams.get("success");
   const orderId = searchParams.get("orderId");
 
   const verifyPayment = async () => {
+    if (!success || !orderId) {
+      toast.error("Invalid verification link");
+      setTimeout(() => {
+        navigate("/cart");
+      }, 3000);
+      return;
+    }
     try {
       if (!token) {
         return null;
       } else {
-        const response = await axios.post(
-          backendUrl + "/api/order/verifyStripe",
-          { success, orderId },
-          { headers: { token } },
-        );
-     
+        const response = await api.post("/api/order/verifyStripe", {
+          success,
+          orderId,
+        });
+
         if (response.data.success) {
           setCartItems({});
           navigate("/orders");
@@ -29,9 +36,9 @@ const Verify = () => {
           navigate("/cart");
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       console.log(error);
-      toast.error(error.message);
+      toast.error(getErrorMessage(error));
     }
   };
   useEffect(() => {

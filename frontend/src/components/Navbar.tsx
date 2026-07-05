@@ -2,6 +2,7 @@ import { useContext, useState } from "react";
 import { assets } from "../assets/assets.js";
 import { Link, NavLink } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext.js";
+import api, { setAccessToken } from "../lib/axios.js";
 const Navbar = () => {
   const [visible, setVisible] = useState(false);
   const {
@@ -17,11 +18,17 @@ const Navbar = () => {
     setShowSearch(true);
     navigate("/collection");
   };
-  const logout = () => {
-    localStorage.removeItem("token");
-    setToken("");
-    setCartItems({});
-    navigate("/login");
+  const logout = async () => {
+    try {
+      await api.post("/api/user/logout");
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setAccessToken("");
+      setToken("");
+      setCartItems({});
+      navigate("/login");
+    }
   };
   return (
     <div className=" flex items-center justify-between py-5 font-medium">

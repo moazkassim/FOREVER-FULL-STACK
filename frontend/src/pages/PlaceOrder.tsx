@@ -4,8 +4,10 @@ import Title from "../components/Title";
 import CartTotal from "../components/CartTotal";
 import { assets } from "../assets/assets";
 import { ShopContext } from "../context/ShopContext";
-import axios from "axios";
+
 import { toast } from "react-toastify";
+import api from "../lib/axios";
+import { getErrorMessage } from "../utils/getErrorMessage";
 interface Product {
   _id: string;
   name: string;
@@ -36,8 +38,6 @@ const PlaceOrder = () => {
   const {
     navigate,
     setCartItems,
-    backendUrl,
-    token,
     cartItems,
     getCartAmount,
     delivery_fee,
@@ -90,29 +90,24 @@ const PlaceOrder = () => {
         // api call for COD
         case "cod":
           try {
-            const response = await axios.post(
-              backendUrl + "/api/order/place",
-              orderData,
-              { headers: { token } },
-            );
+            const response = await api.post("/api/order/place", orderData, {});
             if (response.data.success) {
               setCartItems({});
               navigate("/orders");
             } else {
               toast.error(response.data.message);
             }
-          } catch (error: any) {
+          } catch (error) {
             console.log(error);
-            toast.error(error.message);
+            toast.error(getErrorMessage(error));
           }
           break;
         case "razorpay":
         case "stripe":
           try {
-            const responseStripe = await axios.post(
-              backendUrl + "/api/order/stripe",
+            const responseStripe = await api.post(
+              "/api/order/stripe",
               orderData,
-              { headers: { token } },
             );
             if (responseStripe.data.success) {
               const { session_url } = responseStripe.data;
@@ -120,18 +115,18 @@ const PlaceOrder = () => {
             } else {
               toast.error(responseStripe.data.message);
             }
-          } catch (error: any) {
+          } catch (error) {
             console.log(error);
-            toast.error(error.message);
+            toast.error(getErrorMessage(error));
           }
           break;
 
         default:
           break;
       }
-    } catch (error: any) {
+    } catch (error) {
       console.log(error);
-      toast.error(error.message);
+      toast.error(getErrorMessage(error));
     }
   };
   return (
