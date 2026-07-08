@@ -1,8 +1,10 @@
-import { useContext, useEffect, useState } from "react";
-import { ShopContext } from "../context/ShopContext";
+import { useEffect, useState } from "react";
+
 import Title from "../components/Title";
 import ProductItem from "../components/ProductItem";
 import { assets } from "../assets/assets";
+import { useProductStore } from "../stores/productStore";
+import { useShallow } from "zustand/shallow";
 interface Product {
   _id: string;
   name: string;
@@ -16,7 +18,13 @@ interface Product {
 }
 
 const Collection = () => {
-  const { products, search, showSearch } = useContext(ShopContext);
+  const { products, search, showSearch } = useProductStore(
+    useShallow((state) => ({
+      products: state.products,
+      search: state.search,
+      showSearch: state.showSearch,
+    })),
+  );
   const [showFilter, setShowFilter] = useState(false);
   const [filterProducts, setFilterProducts] = useState<Product[]>([]);
   const [category, setCategory] = useState<string[]>([]);

@@ -16,7 +16,6 @@ interface Product {
   sizes: string[];
   bestseller: boolean;
 }
-
 type CartData = {
   [itemId: string]: {
     [size: string]: number;
@@ -44,11 +43,9 @@ interface ShopContextType {
 export const ShopContext = createContext<ShopContextType>(
   {} as ShopContextType,
 );
-// Props type
 interface ShopContextProviderProps {
   children: ReactNode;
 }
-
 const ShopContextProvider = (props: ShopContextProviderProps) => {
   const currency = "$";
   const delivery_fee = 10;

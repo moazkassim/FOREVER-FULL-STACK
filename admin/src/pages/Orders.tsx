@@ -154,7 +154,7 @@ const Orders = ({ token, backendUrl, currency }: LoginProps) => {
               <option value="Order Placed">Order Placed</option>
               <option value="Packing">Packing</option>
               <option value="Shipped">Shipped</option>
-              <option value="out for delivery">Out For Delivery </option>
+              <option value="Out For Delivery">Out For Delivery </option>
               <option value="Delivered">Delivered </option>
             </select>
           </div>

@@ -1,7 +1,8 @@
-import { useContext, useEffect, useState } from "react";
-import { ShopContext } from "../context/ShopContext";
+import { useEffect, useState } from "react";
+
 import Title from "./Title";
 import ProductItem from "./ProductItem";
+import { useProductStore } from "../stores/productStore";
 interface Product {
   _id: string;
   name: string;
@@ -11,7 +12,7 @@ interface Product {
 }
 
 const BestSeller = () => {
-  const { products } = useContext(ShopContext);
+  const { products } = useProductStore();
   const [bestSeller, setBestSeller] = useState<Product[]>([]);
   useEffect(() => {
     const bestProduct = products.filter((item) => item.bestseller);

@@ -1,6 +1,5 @@
-import { useContext } from "react";
-import { ShopContext } from "../context/ShopContext";
 import { Link } from "react-router-dom";
+import { useCartStore } from "../stores/cartStore";
 interface ProductItem {
   id: string;
   image: string[];
@@ -9,7 +8,7 @@ interface ProductItem {
 }
 
 const ProductItem = ({ id, image, name, price }: ProductItem) => {
-  const { currency } = useContext(ShopContext);
+  const { currency } = useCartStore();
   return (
     <Link className=" text-gray-700 cursor-pointer" to={`/product/${id}`}>
       <div className=" overflow-hidden">

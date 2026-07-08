@@ -1,11 +1,19 @@
-import { useContext, useEffect, useState } from "react";
-import { ShopContext } from "../context/ShopContext";
+import { useEffect, useState } from "react";
+
 import { assets } from "../assets/assets";
 import { useLocation } from "react-router-dom";
+import { useProductStore } from "../stores/productStore";
+import { useShallow } from "zustand/shallow";
 
 const SearchBar = () => {
-  const { search, setSearch, showSearch, setShowSearch } =
-    useContext(ShopContext);
+  const { search, setSearch, showSearch, setShowSearch } = useProductStore(
+    useShallow((state) => ({
+      search: state.search,
+      setSearch: state.setSearch,
+      showSearch: state.showSearch,
+      setShowSearch: state.setShowSearch,
+    })),
+  );
   const location = useLocation();
   const [visible, setVisible] = useState(false);
   const handelCloseSearch = () => {

@@ -1,17 +1,18 @@
-import { useContext, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import { ShopContext } from "../context/ShopContext";
-
+import { useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import api from "../lib/axios";
 import { getErrorMessage } from "../utils/getErrorMessage";
+import { useCartStore } from "../stores/cartStore";
+import { useAuthStore } from "../stores/authStore";
 
 const Verify = () => {
-  const { navigate, token, setCartItems } = useContext(ShopContext);
+  const { setCartItems } = useCartStore();
+  const { token } = useAuthStore();
   const [searchParams, _setSearchParams] = useSearchParams();
   const success = searchParams.get("success");
   const orderId = searchParams.get("orderId");
-
+  const navigate = useNavigate();
   const verifyPayment = async () => {
     if (!success || !orderId) {
       toast.error("Invalid verification link");

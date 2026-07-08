@@ -1,13 +1,15 @@
-import { useContext, useState } from "react";
+import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import Title from "../components/Title";
 import CartTotal from "../components/CartTotal";
 import { assets } from "../assets/assets";
-import { ShopContext } from "../context/ShopContext";
-
 import { toast } from "react-toastify";
 import api from "../lib/axios";
 import { getErrorMessage } from "../utils/getErrorMessage";
+import { useNavigate } from "react-router-dom";
+import { useCartStore } from "../stores/cartStore";
+import { useProductStore } from "../stores/productStore";
+import { useShallow } from "zustand/shallow";
 interface Product {
   _id: string;
   name: string;
@@ -35,14 +37,15 @@ interface FormDataState {
   phone: string;
 }
 const PlaceOrder = () => {
-  const {
-    navigate,
-    setCartItems,
-    cartItems,
-    getCartAmount,
-    delivery_fee,
-    products,
-  } = useContext(ShopContext);
+  const { setCartItems, cartItems, getCartAmount, delivery_fee } = useCartStore(
+    useShallow((state) => ({
+      setCartItems: state.setCartItems,
+      cartItems: state.cartItems,
+      getCartAmount: state.getCartAmount,
+      delivery_fee: state.delivery_fee,
+    })),
+  );
+  const { products } = useProductStore();
   const [method, setMethod] = useState("cod");
   const [formData, setFormData] = useState<FormDataState>({
     firstName: "",
@@ -55,6 +58,7 @@ const PlaceOrder = () => {
     country: "",
     phone: "",
   });
+  const navigate = useNavigate();
   const onChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {
     const name = event.target.name;
     const value = event.target.value;
@@ -84,7 +88,7 @@ const PlaceOrder = () => {
       let orderData = {
         address: formData,
         items: orderItems,
-        amount: getCartAmount() + delivery_fee,
+        amount: getCartAmount(products) + delivery_fee,
       };
       switch (method) {
         // api call for COD

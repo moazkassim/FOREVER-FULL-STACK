@@ -1,17 +1,26 @@
-import { useContext, useEffect, useState } from "react";
-import { ShopContext } from "../context/ShopContext";
+import { useEffect, useState } from "react";
+
 import type { FormEvent } from "react";
 import { toast } from "react-toastify";
 import api, { setAccessToken } from "../lib/axios";
 import { getErrorMessage } from "../utils/getErrorMessage";
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../stores/authStore";
+import { useShallow } from "zustand/shallow";
 
 const Login = () => {
   const [currentState, setCurrentState] = useState("Login");
-  const { sessionLoading, token, setToken, navigate } = useContext(ShopContext);
+  const { sessionLoading, token, setToken } = useAuthStore(
+    useShallow((state) => ({
+      sessionLoading: state.sessionLoading,
+      token: state.token,
+      setToken: state.setToken,
+    })),
+  );
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
-
+  const navigate = useNavigate();
   useEffect(() => {
     if (token) {
       if (!token) return;
@@ -41,7 +50,7 @@ const Login = () => {
           email,
           password,
         });
-        
+
         if (response.data.success) {
           setToken(response.data.token);
           setAccessToken(response.data.token);

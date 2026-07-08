@@ -1,7 +1,8 @@
-import { useContext, useEffect, useState } from "react";
-import { ShopContext } from "../context/ShopContext";
+import { useEffect, useState } from "react";
+
 import Title from "./Title";
 import ProductItem from "./ProductItem";
+import { useProductStore } from "../stores/productStore";
 interface RelatedProductsProps {
   category: string;
   subCategory: string;
@@ -18,7 +19,7 @@ interface Product {
   bestseller: boolean;
 }
 const RelatedProducts = ({ category, subCategory }: RelatedProductsProps) => {
-  const { products } = useContext(ShopContext);
+  const { products } = useProductStore();
   const [related, setRelated] = useState<Product[]>([]);
 
   useEffect(() => {

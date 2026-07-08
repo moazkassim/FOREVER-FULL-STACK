@@ -1,18 +1,29 @@
-import { useContext, useEffect, useState } from "react";
-import { ShopContext } from "../context/ShopContext";
+import { useEffect, useState } from "react";
 
 import Title from "../components/Title";
 import { assets } from "../assets/assets";
 import CartTotal from "../components/CartTotal";
+import { useCartStore } from "../stores/cartStore";
+import { useProductStore } from "../stores/productStore";
+import { useNavigate } from "react-router-dom";
+import { useShallow } from "zustand/shallow";
 interface CartDisplayItem {
   _id: string;
   size: string;
   quantity: number;
 }
+
 const Cart = () => {
-  const { cartItems, products, currency, updateQuantity, navigate } =
-    useContext(ShopContext);
+  const { cartItems, updateQuantity, currency } = useCartStore(
+    useShallow((state) => ({
+      cartItems: state.cartItems,
+      updateQuantity: state.updateQuantity,
+      currency: state.currency,
+    })),
+  );
+  const { products } = useProductStore();
   const [cartData, setCartData] = useState<CartDisplayItem[]>([]);
+  const navigate = useNavigate();
   useEffect(() => {
     if (products.length > 0) {
       let tempData: CartDisplayItem[] = [];

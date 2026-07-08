@@ -1,8 +1,11 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { ShopContext } from "../context/ShopContext";
+
 import { assets } from "../assets/assets";
 import RelatedProducts from "../components/RelatedProducts";
+import { useProductStore } from "../stores/productStore";
+import { useCartStore } from "../stores/cartStore";
+import { useShallow } from "zustand/shallow";
 interface Product {
   _id: string;
   name: string;
@@ -16,7 +19,13 @@ interface Product {
 }
 const Product = () => {
   const { productId } = useParams();
-  const { products, currency, addToCart } = useContext(ShopContext);
+  const { products } = useProductStore();
+  const { currency, addToCart } = useCartStore(
+    useShallow((state) => ({
+      currency: state.currency,
+      addToCart: state.addToCart,
+    })),
+  );
   const [productData, setProductData] = useState<Product | null>(null);
   const [image, setImage] = useState("");
   const [size, setSize] = useState("");

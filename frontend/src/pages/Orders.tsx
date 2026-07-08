@@ -1,11 +1,12 @@
-import { useContext } from "react";
-import { ShopContext } from "../context/ShopContext";
+
 import Title from "../components/Title";
 import { useState } from "react";
 import { useEffect } from "react";
 import { toast } from "react-toastify";
 import api from "../lib/axios";
 import { getErrorMessage } from "../utils/getErrorMessage";
+import { useAuthStore } from "../stores/authStore";
+import { useCartStore } from "../stores/cartStore";
 
 interface Product {
   _id: string;
@@ -28,7 +29,8 @@ interface OrderItem extends Product {
 }
 
 const Orders = () => {
-  const { token, currency } = useContext(ShopContext);
+  const { currency } = useCartStore();
+  const { token } = useAuthStore();
   const [orderData, setOrderData] = useState<OrderItem[]>([]);
   const loadOrderData = async () => {
     try {

@@ -1,10 +1,17 @@
-
-import { useContext } from "react";
-import { ShopContext } from "../context/ShopContext";
 import Title from "./Title";
+import { useCartStore } from "../stores/cartStore";
+import { useProductStore } from "../stores/productStore";
+import { useShallow } from "zustand/shallow";
 
 const CartTotal = () => {
-  const { delivery_fee, currency, getCartAmount } = useContext(ShopContext);
+  const { delivery_fee, currency, getCartAmount } = useCartStore(
+    useShallow((state) => ({
+      delivery_fee: state.delivery_fee,
+      currency: state.currency,
+      getCartAmount: state.getCartAmount,
+    })),
+  );
+  const { products } = useProductStore();
   return (
     <div className=" w-full">
       <div className=" text-2xl">
@@ -16,7 +23,7 @@ const CartTotal = () => {
           <p>Subtotal</p>
           <p>
             {currency}
-            {getCartAmount()}.00
+            {getCartAmount(products)}.00
           </p>
         </div>
         <hr />
@@ -32,7 +39,10 @@ const CartTotal = () => {
           <p>Total</p>
           <p>
             {currency}
-            {getCartAmount() === 0 ? 0 : getCartAmount() + delivery_fee}.00
+            {getCartAmount(products) === 0
+              ? 0
+              : getCartAmount(products) + delivery_fee}
+            .00
           </p>
         </div>
       </div>
