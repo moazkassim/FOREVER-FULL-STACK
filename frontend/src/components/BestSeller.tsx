@@ -3,16 +3,19 @@ import { useEffect, useState } from "react";
 import Title from "./Title";
 import ProductItem from "./ProductItem";
 import { useProductStore } from "../stores/productStore";
+
 interface Product {
   _id: string;
   name: string;
   price: number;
   image: string[];
   bestseller: boolean;
+  sizes: string[];
 }
 
 const BestSeller = () => {
   const { products } = useProductStore();
+
   const [bestSeller, setBestSeller] = useState<Product[]>([]);
   useEffect(() => {
     const bestProduct = products.filter((item) => item.bestseller);
@@ -36,6 +39,7 @@ const BestSeller = () => {
             image={item.image}
             name={item.name}
             price={item.price}
+            sizes={item.sizes}
           />
         ))}
       </div>

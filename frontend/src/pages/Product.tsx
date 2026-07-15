@@ -1,11 +1,29 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-
 import { assets } from "../assets/assets";
 import RelatedProducts from "../components/RelatedProducts";
 import { useProductStore } from "../stores/productStore";
 import { useCartStore } from "../stores/cartStore";
 import { useShallow } from "zustand/shallow";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { BanknoteCheck, Check, CirclePercent, Repeat } from "lucide-react";
 interface Product {
   _id: string;
   name: string;
@@ -29,21 +47,46 @@ const Product = () => {
   const [productData, setProductData] = useState<Product | null>(null);
   const [image, setImage] = useState("");
   const [size, setSize] = useState("");
-
   const fetchProductData = async () => {
     products.map((item) => {
       if (item._id === productId) {
         setProductData(item);
         setImage(item.image[0]);
-
         return null;
       }
     });
   };
-
   useEffect(() => {
     fetchProductData();
   }, [productId]);
+  if (products.length === 0) {
+    return (
+      <div className="border-t-2 pt-10">
+        <div className="flex gap-12 flex-col sm:flex-row">
+          <div className="flex-1 flex flex-col-reverse gap-3 sm:flex-row">
+            <div className="flex sm:flex-col gap-2 sm:w-[18.7%]">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="w-[24%] sm:w-full aspect-square" />
+              ))}
+            </div>
+            <Skeleton className="w-full sm:w-[80%] aspect-square" />
+          </div>
+          <div className="flex-1 flex flex-col gap-4">
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-4 w-1/4" />
+            <Skeleton className="h-6 w-1/5" />
+            <Skeleton className="h-20 w-4/5" />
+            <div className="flex gap-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-10 w-14" />
+              ))}
+            </div>
+            <Skeleton className="h-12 w-40" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return productData ? (
     <div className=" border-t-2 pt-10 transition-opacity ease-in duration-500 opacity-100">
@@ -83,58 +126,100 @@ const Product = () => {
           <p className=" mt-5 text-gray-500 md:w-4/5">
             {productData.description}
           </p>
+
           <div className=" flex flex-col gap-4 my-8">
-            <p> select size</p>
+            <p> Select Size</p>
+
             <div className=" flex gap-2">
               {productData.sizes.map((item, index) => (
-                <button
-                  className={`border py-2 px-4 bg-gray-100 cursor-pointer ${item === size ? "border-orange-500" : ""}`}
+                <Button
+                  variant={item === size ? "default" : "outline"}
                   key={index}
+                  className="min-w-[3rem]"
                   onClick={() => setSize(item)}
                 >
                   {item}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
-          <button
+          <Button
+            variant="ghost"
             className=" bg-black text-white px-8 py-3 text-sm active:bg-gray-700 cursor-pointer"
             onClick={() => addToCart(productData._id, size)}
           >
             ADD TO CART
-          </button>
-          <hr className=" mt-8 sm:w-4/5" />
-          <div className="text-sm text-gray-500 mt-5 flex flex-col gap-1">
-            <p>100% Original product. </p>
-            <p>Cash on delivery is available in this product.</p>
-            <p>Easy return and exchange policy within 7 days.</p>
+          </Button>
+          <Separator className=" mt-8 sm:w-4/5" />
+
+          <div className="text-sm  mt-5 flex flex-col gap-2 sm:w-4/5">
+            <Item variant="muted" size="sm">
+              <ItemMedia>
+                <CirclePercent size="22" />
+              </ItemMedia>
+              <ItemContent>
+                <ItemTitle>100% Original product.</ItemTitle>
+              </ItemContent>
+            </Item>
+            <Item variant="muted" size="sm">
+              <ItemMedia>
+                <BanknoteCheck size="22" />
+              </ItemMedia>
+              <ItemContent>
+                <ItemTitle>
+                  Cash on delivery is available in this product.
+                </ItemTitle>
+              </ItemContent>
+            </Item>
+            <Item variant="muted" size="sm">
+              <ItemMedia>
+                <Repeat size="22" />
+              </ItemMedia>
+              <ItemContent>
+                <ItemTitle>
+                  Easy return and exchange policy within 7 days.
+                </ItemTitle>
+              </ItemContent>
+            </Item>
           </div>
         </div>
       </div>
       {/* {Description & review section } */}
-      <div className=" mt-20">
-        <div className=" flex ">
-          <b className=" border px-5 py-3 text-sm">Description</b>
-          <p className=" border px-5 py-3 text-sm">Reviews (122)</p>
-        </div>
-        <div className=" flex flex-col gap-4 border px-6 py-6 text-sm text-gray-500">
-          <p className="">
-            An e-commerce website is an online platform that facilitates the
-            buying and selling of products or services over the internet. It
-            serves as a virtual marketplace where businesses and individuals can
-            showcase their products, interact with customers, and conduct
-            transactions without the need for a physical presence. E-commerce
-            websites have gained immense popularity due to their convenience,
-            accessibility, and the global reach they offer.
-          </p>
-          <p>
-            E-commerce websites typically display products or services along
-            with detailed descriptions, images, prices, and any available
-            variations (e.g., sizes, colors). Each product usually has its own
-            dedicated page with relevant information.
-          </p>
-        </div>
-      </div>
+      <Tabs defaultValue="overview" className=" mt-20">
+        <TabsList>
+          <TabsTrigger value="description">Description</TabsTrigger>
+          <TabsTrigger value="reviews">Reviews (122)</TabsTrigger>
+        </TabsList>
+        <TabsContent value="description">
+          <Card>
+            <CardHeader>
+              <CardTitle>Description</CardTitle>
+              <CardDescription>
+                An e-commerce website is an online platform that facilitates the
+                buying and selling of products or services over the internet. It
+                serves as a virtual marketplace where businesses and individuals
+                can showcase their products, interact with customers, and
+                conduct transactions without the need for a physical presence.
+                E-commerce websites have gained immense popularity due to their
+                convenience, accessibility, and the global reach they offer.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </TabsContent>
+        <TabsContent value="reviews">
+          <Card>
+            <CardHeader>
+              <CardTitle>Reviews</CardTitle>
+              <CardDescription>
+                E-commerce websites typically display products or services along
+                with detailed descriptions, images, prices, and any available
+                variations (e.g., sizes, colors). Each product usually has its
+                own dedicated page with relevant information.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* display relate products */}
       <RelatedProducts
@@ -143,7 +228,12 @@ const Product = () => {
       />
     </div>
   ) : (
-    <div>no data there</div>
+    <div className="border-t-2 pt-10 flex flex-col items-center justify-center min-h-[40vh] gap-4">
+      <p className="text-gray-500 text-lg">Product not found.</p>
+      <Button variant="outline" onClick={() => history.back()}>
+        Go Back
+      </Button>
+    </div>
   );
 };
 

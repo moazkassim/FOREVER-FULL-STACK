@@ -1,16 +1,40 @@
-import { useState } from "react";
-import { assets } from "../assets/assets.js";
-import { Link, NavLink } from "react-router-dom";
-import { useProductStore } from "../stores/productStore.js";
-import { useCartStore } from "../stores/cartStore.js";
-import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../stores/authStore.js";
+
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { assets } from "../assets/assets";
+import { useAuthStore } from "../stores/authStore";
+import { useCartStore } from "../stores/cartStore";
+import { useProductStore } from "../stores/productStore";
 import { useShallow } from "zustand/shallow";
+
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetClose,
+  SheetFooter,
+} from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "./ui/button";
+
+const NAV_LINKS = [
+  { to: "/", label: "HOME" },
+  { to: "/collection", label: "COLLECTION" },
+  { to: "/about", label: "ABOUT" },
+  { to: "/contact", label: "CONTACT" },
+];
+
 const Navbar = () => {
   const navigate = useNavigate();
-  const [visible, setVisible] = useState(false);
-  const { setShowSearch } = useProductStore();
+
   const { getCartCount } = useCartStore();
+  const { setShowSearch } = useProductStore();
+
   const { token, logout, sessionLoading } = useAuthStore(
     useShallow((state) => ({
       token: state.token,
@@ -18,137 +42,197 @@ const Navbar = () => {
       sessionLoading: state.sessionLoading,
     })),
   );
-  const handelSearchIcon = () => {
+
+  // Subscribe to cart count changes
+
+  const handleSearchIcon = () => {
     setShowSearch(true);
     navigate("/collection");
   };
-  if (sessionLoading) return null;
+
   return (
-    <div className=" flex items-center justify-between py-5 font-medium">
+    <div className="flex items-center justify-between py-5 font-medium">
+      {/* Logo */}
       <Link to="/">
-        <img src={assets.logo} alt="logo" className=" w-36" />
+        <img src={assets.logo} alt="logo" className="w-36" />
       </Link>
 
-      <ul className=" hidden sm:flex gap-5 text-sm text-gray-700">
-        <NavLink to="/" className=" flex flex-col items-center gap-1 ">
-          <p>HOME </p>
-          <hr className="w-2/4 border-none h-[1.5px] bg-gray-700 hidden" />
-        </NavLink>
-        <NavLink
-          to="/collection"
-          className=" flex flex-col items-center gap-1 "
-        >
-          <p>COLLECTION </p>
-          <hr className="w-2/4 border-none h-[1.5px] bg-gray-700 hidden" />
-        </NavLink>
-        <NavLink to="/about" className=" flex flex-col items-center gap-1 ">
-          <p>ABOUT </p>
-          <hr className="w-2/4 border-none h-[1.5px] bg-gray-700 hidden" />
-        </NavLink>
-        <NavLink to="/contact" className=" flex flex-col items-center gap-1 ">
-          <p>CONTACT </p>
-          <hr className="w-2/4 border-none h-[1.5px] bg-gray-700 hidden" />
-        </NavLink>
+      {/* Desktop nav links */}
+      <ul className="hidden sm:flex gap-5 text-sm text-gray-700">
+        {NAV_LINKS.map(({ to, label }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className="flex flex-col items-center gap-1"
+          >
+            {({ isActive }) => (
+              <>
+                <p>{label}</p>
+                <hr
+                  className={`w-2/4 border-none h-[1.5px] bg-gray-700 ${
+                    isActive ? "block" : "hidden"
+                  }`}
+                />
+              </>
+            )}
+          </NavLink>
+        ))}
       </ul>
-      <div className=" flex items-center gap-6">
+
+      {/* Right side icons */}
+      <div className="flex items-center gap-6">
+        {/* Search */}
         <img
           src={assets.search_icon}
-          alt="search icon"
-          className=" w-5 cursor-pointer"
-          onClick={handelSearchIcon}
+          alt="search"
+          className="w-5 cursor-pointer"
+          onClick={handleSearchIcon}
         />
-        <div className=" group relative">
-          <Link to={"/login"}>
-            <img
-              onClick={() => !token && navigate("/login")}
-              src={assets.profile_icon}
-              alt="profile icon"
-              className=" w-5 cursor-pointer"
-            />
-          </Link>
-          <div className=" drop-down-menu pt-4 hidden right-0 absolute group-hover:block">
-            {!sessionLoading && token && (
-              <div className=" flex flex-col gap-2 w-36 py-3 px-5 bg-slate-100 text-gray-500 rounded ">
-                <p className=" cursor-pointer hover:text-black">My profile</p>
-                <p
-                  className=" cursor-pointer hover:text-black"
+
+        {/* Profile dropdown */}
+        {!sessionLoading && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <img
+                src={assets.profile_icon}
+                alt="profile"
+                className="w-5 cursor-pointer"
+              />
+            </DropdownMenuTrigger>
+            {token ? (
+              <DropdownMenuContent align="end" className="w-36">
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => navigate("/profile")}
+                >
+                  My Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer"
                   onClick={() => navigate("/orders")}
                 >
                   Orders
-                </p>
-                <p
-                  className=" cursor-pointer hover:text-black"
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="cursor-pointer text-red-500 focus:text-red-500"
                   onClick={logout}
                 >
                   Logout
-                </p>
-              </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            ) : (
+              <DropdownMenuContent align="end" className="w-36">
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => navigate("/login")}
+                >
+                  Login
+                </DropdownMenuItem>
+              </DropdownMenuContent>
             )}
-          </div>
-        </div>
-        <Link to="./cart" className=" relative">
-          <img src={assets.cart_icon} alt="cart icon" className="w-5 min-w-5" />
-          <p className=" absolute right-[-5px] bottom-[-5px] text-center bg-black w-4 leading-4 text-white rounded-full text-[8px] aspect-square">
+          </DropdownMenu>
+        )}
+
+        {/* Cart */}
+        <Link to="/cart" className="relative">
+          <img src={assets.cart_icon} alt="cart" className="w-5 min-w-5" />
+          <p className="absolute right-[-5px] bottom-[-5px] text-center bg-black w-4 leading-4 text-white rounded-full text-[8px] aspect-square">
             {getCartCount()}
           </p>
         </Link>
-        <img
-          src={assets.menu_icon}
-          alt="menu icon"
-          className=" w-5 cursor-pointer sm:hidden"
-          onClick={() => setVisible(true)}
-        />
-      </div>
-      {/* sidebar menu for small screen */}
-      <div
-        className={` absolute top-0 right-0 bottom-0 overflow-hidden bg-white transition-all ${
-          visible ? "w-full" : " w-0"
-        }`}
-      >
-        <div className=" flex flex-col text-gray-600">
-          <div
-            onClick={() => setVisible(false)}
-            className=" flex items-center gap-4 p-3  "
-          >
+
+        {/* Mobile menu trigger */}
+        <Sheet>
+          <SheetTrigger asChild>
             <img
-              className=" h-4 rotate-180 cursor-pointer"
-              src={assets.dropdown_icon}
-              alt="drop-down-menu"
+              src={assets.menu_icon}
+              alt="menu"
+              className="w-5 cursor-pointer sm:hidden"
             />
-            <p className="cursor-pointer">Back</p>
-          </div>
-          <NavLink
-            onClick={() => setVisible(false)}
-            className="py-2 pl-6 border-b"
-            to="/"
-          >
-            Home
-          </NavLink>
-          <NavLink
-            onClick={() => setVisible(false)}
-            className="py-2 pl-6 border-b"
-            to="/collection"
-          >
-            COLLECTION
-          </NavLink>
-          <NavLink
-            onClick={() => setVisible(false)}
-            className="py-2 pl-6 border-b"
-            to="/about"
-          >
-            ABOUT
-          </NavLink>
-          <NavLink
-            onClick={() => setVisible(false)}
-            className="py-2 pl-6 border-b"
-            to="/contact"
-          >
-            CONTACT
-          </NavLink>
-        </div>
+          </SheetTrigger>
+
+          <SheetContent className="w-64 p-0 ">
+            <div className="grid flex-1 auto-rows-min  mt-12 w-64 ">
+              {NAV_LINKS.map(({ to, label }) => (
+                <SheetClose className="hover:bg-mist-100" asChild key={to}>
+                  <NavLink
+                    to={to}
+                    className={({ isActive }) =>
+                      ` grid p-2  text-left  ${
+                        isActive
+                          ? "bg-black text-white"
+                          : "hover:bg-gray-50 hover:text-black"
+                      }`
+                    }
+                  >
+                    {label}
+                  </NavLink>
+                </SheetClose>
+              ))}
+              {token ? (
+                <>
+                  <SheetClose className="hover:bg-mist-100" asChild>
+                    <NavLink
+                      to="/profile"
+                      className={({ isActive }) =>
+                        `  grid p-2  text-left  ${
+                          isActive
+                            ? "bg-black text-white"
+                            : "hover:bg-gray-50 hover:text-black"
+                        }`
+                      }
+                    >
+                      My Profile
+                    </NavLink>
+                  </SheetClose>
+                  <SheetClose className="hover:bg-mist-100" asChild>
+                    <NavLink
+                      to="/orders"
+                      className={({ isActive }) =>
+                        ` grid p-2  text-left  ${
+                          isActive
+                            ? "bg-black text-white"
+                            : "hover:bg-gray-50 hover:text-black"
+                        }`
+                      }
+                    >
+                      Orders
+                    </NavLink>
+                  </SheetClose>
+                  <SheetFooter>
+                    <SheetClose asChild>
+                      <Button
+                        className=" cursor-pointer text-red-500"
+                        variant="ghost"
+                        onClick={logout}
+                      >
+                        Logout
+                      </Button>
+                    </SheetClose>
+                  </SheetFooter>
+                </>
+              ) : (
+                <SheetFooter>
+                  <SheetClose asChild>
+                    <Button
+                      className=" cursor-pointer"
+                      variant="ghost"
+                      onClick={() => navigate("/login")}
+                    >
+                      Login
+                    </Button>
+                  </SheetClose>
+                </SheetFooter>
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </div>
   );
 };
 
 export default Navbar;
+
+

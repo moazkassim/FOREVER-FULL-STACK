@@ -1,4 +1,4 @@
-# Forever — Full Stack E-Commerce Platform
+# Forever - Full Stack E-Commerce Platform
 
 A full-stack e-commerce application built with the MERN stack and TypeScript. Includes a customer-facing storefront, a separate admin panel, and a RESTful backend API with JWT authentication, Stripe payments, and Cloudinary image hosting.
 

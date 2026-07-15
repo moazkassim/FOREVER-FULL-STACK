@@ -1,7 +1,7 @@
-
 import Title from "../components/Title";
 import { assets } from "../assets/assets";
 import NewsletterBox from "../components/NewsletterBox";
+import { Button } from "@/components/ui/button";
 
 const Contact = () => {
   return (
@@ -31,9 +31,12 @@ const Contact = () => {
           <p className=" text-gray-500">
             Learn more about our teams and job openings.
           </p>
-          <button className="border border-black px-8 py-4 text-sm hover:bg-black hover:text-white transition-all duration-500">
+          <Button
+            variant="ghost"
+            className="border rounded-md border-black px-8 py-6 text-sm hover:bg-black hover:text-white transition-all duration-500"
+          >
             Explore Jobs
-          </button>
+          </Button>
         </div>
       </div>
       <NewsletterBox />

@@ -10,6 +10,17 @@ import { useNavigate } from "react-router-dom";
 import { useCartStore } from "../stores/cartStore";
 import { useProductStore } from "../stores/productStore";
 import { useShallow } from "zustand/shallow";
+import { Input } from "@/components/ui/input";
+import { Field } from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
+import { InboxIcon } from "lucide-react";
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
 interface Product {
   _id: string;
   name: string;
@@ -143,116 +154,136 @@ const PlaceOrder = () => {
         <div className=" text-xl sm:text-2xl my-3">
           <Title text1={"DELIVERY"} text2={"INFORMATION"} />
         </div>
-        <div className=" flex gap-3">
-          <input
-            required
-            type="text"
-            placeholder="First name"
-            className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
-            onChange={onChangeHandler}
-            name="firstName"
-            value={formData.firstName}
-          />
-          <input
-            required
-            type="text"
-            placeholder="Last name"
-            className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
-            onChange={onChangeHandler}
-            name="lastName"
-            value={formData.lastName}
-          />
+        <div className=" flex gap-3  w-full">
+          <Field>
+            <Input
+              required
+              type="text"
+              placeholder="First name"
+              className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
+              onChange={onChangeHandler}
+              name="firstName"
+              value={formData.firstName}
+            />
+          </Field>
+          <Field>
+            <Input
+              required
+              type="text"
+              placeholder="Last name"
+              className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
+              onChange={onChangeHandler}
+              name="lastName"
+              value={formData.lastName}
+            />
+          </Field>
         </div>
-        <input
-          required
-          type="email"
-          placeholder="Email address"
-          className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
-          onChange={onChangeHandler}
-          name="email"
-          value={formData.email}
-        />
-        <input
-          required
-          type="text"
-          placeholder="Street"
-          className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
-          onChange={onChangeHandler}
-          name="street"
-          value={formData.street}
-        />
+        <Field>
+          <Input
+            required
+            type="email"
+            placeholder="Email address"
+            className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
+            onChange={onChangeHandler}
+            name="email"
+            value={formData.email}
+          />
+        </Field>
+        <Field>
+          <Input
+            required
+            type="text"
+            placeholder="Street"
+            className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
+            onChange={onChangeHandler}
+            name="street"
+            value={formData.street}
+          />
+        </Field>
         <div className=" flex gap-3">
-          <input
-            required
-            type="text"
-            placeholder="City"
-            className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
-            onChange={onChangeHandler}
-            name="city"
-            value={formData.city}
-          />
-          <input
-            required
-            type="text"
-            placeholder="State"
-            className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
-            onChange={onChangeHandler}
-            name="state"
-            value={formData.state}
-          />
+          <Field>
+            <Input
+              required
+              type="text"
+              placeholder="City"
+              className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
+              onChange={onChangeHandler}
+              name="city"
+              value={formData.city}
+            />
+          </Field>
+          <Field>
+            <Input
+              required
+              type="text"
+              placeholder="State"
+              className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
+              onChange={onChangeHandler}
+              name="state"
+              value={formData.state}
+            />
+          </Field>
         </div>
         <div className=" flex gap-3">
-          <input
-            required
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            placeholder="ZIP Code"
-            className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
-            onChange={onChangeHandler}
-            name="zipcode"
-            value={formData.zipcode}
-          />
-          <input
-            required
-            type="text"
-            placeholder="Country"
-            className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
-            onChange={onChangeHandler}
-            name="country"
-            value={formData.country}
-          />
+          <Field>
+            <Input
+              required
+              type="number"
+              pattern="[0-9]*"
+              placeholder="ZIP Code"
+              className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
+              onChange={onChangeHandler}
+              name="zipcode"
+              value={formData.zipcode}
+            />
+          </Field>
+          <Field>
+            <Input
+              required
+              type="text"
+              placeholder="Country"
+              className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
+              onChange={onChangeHandler}
+              name="country"
+              value={formData.country}
+            />
+          </Field>
         </div>
-
-        <input
-          required
-          type="tel"
-          placeholder="Phone"
-          className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
-          onChange={onChangeHandler}
-          name="phone"
-          value={formData.phone}
-        />
+        <Field>
+          <Input
+            required
+            type="tel"
+            placeholder="Phone"
+            className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
+            onChange={onChangeHandler}
+            name="phone"
+            value={formData.phone}
+          />
+        </Field>
       </div>
+
       {/* ---------------------------------- Right Side ------------------------------------- */}
       <div className=" mt-8">
         <div className=" mt-8 min-w-80">
           <CartTotal />
         </div>
-        <div className=" mt-12">
+        <div className=" mt-12 flex flex-col items-center ">
           <Title text1={"PAYMENT"} text2={"METHOD"} />
           {/* ---------------------------payment method ---------------------------------- */}
-          <div className=" flex gap-3 flex-col lg:flex-row">
-            <div
+          <div className=" flex gap-3 flex-col lg:flex-row ">
+            <Item
+              variant="outline"
               onClick={() => setMethod("stripe")}
-              className="flex items-center gap-3 border p-2 px-3 cursor-pointer"
+              className="flex  items-center  gap-2  p-4 cursor-pointer"
             >
               <p
                 className={`min-w-3.5 h-3.5 border rounded-full ${method === "stripe" ? "bg-green-400" : ""}`}
               ></p>
+
               <img src={assets.stripe_logo} alt="" className=" h-5 mx-4" />
-            </div>
-            <div
+            </Item>
+            <Item
+              variant="outline"
               onClick={() => setMethod("razorpay")}
               className="flex items-center gap-3 border p-2 px-3 cursor-pointer"
             >
@@ -260,8 +291,9 @@ const PlaceOrder = () => {
                 className={`min-w-3.5 h-3.5 border rounded-full ${method === "razorpay" ? "bg-green-400" : ""}`}
               ></p>
               <img src={assets.razorpay_logo} alt="" className=" h-5 mx-4" />
-            </div>
-            <div
+            </Item>
+            <Item
+              variant="outline"
               onClick={() => setMethod("cod")}
               className="flex items-center gap-3 border p-2 px-3 cursor-pointer"
             >
@@ -271,16 +303,17 @@ const PlaceOrder = () => {
               <p className="text-gray-400 text-sm font-m mx-4 ">
                 CASH ON DELIVERY
               </p>
-            </div>
+            </Item>
           </div>
-          <div className=" w-full text-end mt-8">
-            <button
+          <Field className=" flex items-center w-full text-end mt-8 ">
+            <Button
+              variant="outline"
               type="submit"
-              className="bg-black text-white px-16 py-3 text-sm cursor-pointer"
+              className="bg-black text-white max-w-54 px-16 py-3 text-sm cursor-pointer"
             >
               PLACE ORDER
-            </button>
-          </div>
+            </Button>
+          </Field>
         </div>
       </div>
     </form>

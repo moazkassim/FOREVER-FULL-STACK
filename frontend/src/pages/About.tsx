@@ -1,8 +1,15 @@
-
 import Title from "../components/Title";
 import { assets } from "../assets/assets";
 import NewsletterBox from "../components/NewsletterBox";
 
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
+import { MessageCircle, ShieldCheck, WrenchOff } from "lucide-react";
 const About = () => {
   return (
     <div>
@@ -39,31 +46,46 @@ const About = () => {
           </p>
         </div>
       </div>
-      <div className=" text-xl py-4">
+      <div className=" text-xl py-4 mt-20 ">
         <Title text1={"WHY"} text2={"CHOOSE US"} />
       </div>
-      <div className="flex flex-col md:flex-row text-sm mb-20">
-        <div className="border px-10 md:px-16 py-8 sm:py-20 flex flex-col gap-5">
-          <b>Quality Assurance:</b>
-          <p className=" text-gray-600">
-            We meticulously select and vet each product to ensure it meets our
-            stringent quality standards.
-          </p>
-        </div>
-        <div className="border px-10 md:px-16 py-8 sm:py-20 flex flex-col gap-5">
-          <b>Convenience:</b>
-          <p className=" text-gray-600">
-            With our user-friendly interface and hassle-free ordering process,
-            shopping has never been easier.
-          </p>
-        </div>
-        <div className="border px-10 md:px-16 py-8 sm:py-20 flex flex-col gap-5">
-          <b>Exceptional Customer Service:</b>
-          <p className=" text-gray-600">
-            Our team of dedicated professionals is here to assist you the way,
-            ensuring your satisfaction is our top priority.
-          </p>
-        </div>
+      <div className="flex flex-col md:flex-row gap-6 text-sm  mt-5 mb-20  ">
+        <Item variant="outline">
+          <ItemMedia variant="icon">
+            <ShieldCheck />
+          </ItemMedia>
+          <ItemContent>
+            <ItemTitle>Quality Assurance:</ItemTitle>
+            <ItemDescription className=" text-gray-600">
+              We meticulously select and vet each product to ensure it meets our
+              stringent quality standards.
+            </ItemDescription>
+          </ItemContent>
+        </Item>
+        <Item variant="outline">
+          <ItemMedia variant="icon">
+            <MessageCircle />
+          </ItemMedia>
+          <ItemContent>
+            <ItemTitle>Convenience:</ItemTitle>
+            <ItemDescription className=" text-gray-600">
+              With our user-friendly interface and hassle-free ordering process,
+              shopping has never been easier.
+            </ItemDescription>
+          </ItemContent>
+        </Item>
+        <Item variant="outline">
+          <ItemMedia variant="icon">
+            <WrenchOff />
+          </ItemMedia>
+          <ItemContent>
+            <ItemTitle>Exceptional Customer Service:</ItemTitle>
+            <ItemDescription className=" text-gray-600">
+              Our team of dedicated professionals is here to assist you the way,
+              ensuring your satisfaction is our top priority.
+            </ItemDescription>
+          </ItemContent>
+        </Item>
       </div>
       <NewsletterBox />
     </div>

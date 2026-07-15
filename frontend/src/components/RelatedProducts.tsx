@@ -32,7 +32,7 @@ const RelatedProducts = ({ category, subCategory }: RelatedProductsProps) => {
     }
   }, []);
   return (
-    <div className="my-24">
+    <section className="my-24">
       <div className=" text-center text-3xl py-2">
         <Title text1={"RELATED"} text2={"PRODUCTS"} />
       </div>
@@ -44,10 +44,11 @@ const RelatedProducts = ({ category, subCategory }: RelatedProductsProps) => {
             image={item.image}
             price={item.price}
             name={item.name}
+            sizes={item.sizes}
           />
         ))}
       </div>
-    </div>
+    </section>
   );
 };
 

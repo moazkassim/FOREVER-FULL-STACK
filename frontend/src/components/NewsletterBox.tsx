@@ -1,37 +1,39 @@
-import React from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 const NewsletterBox = () => {
   const onSubmitHandler = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
   };
+
   return (
-    <div className=" text-center">
-      <p className=" text-2xl font-medium text-gray-800">
-        Subscribe & get 20% off
+    <section className="text-center py-16">
+      <p className="text-2xl font-medium text-gray-800">
+        Subscribe & Get 20% Off
       </p>
-      <p className=" text-gray-400 mt-3">
-        Lorem Ipsum is simply dummy text of the printing and typesetting
-        industry.
+      <p className="text-gray-400 mt-3 max-w-md mx-auto">
+        Be the first to know about new arrivals, exclusive deals, and style
+        inspiration.
       </p>
 
       <form
         onSubmit={onSubmitHandler}
-        className=" w-full sm:w-1/2 flex items-center gap-3 mx-auto my-6 border pl-3"
+        className="w-full sm:w-1/2 flex items-center mx-auto my-6"
       >
-        <input
-          className=" w-full sm:flex-1 outline-none"
+        <Input
           type="email"
           placeholder="Enter your email"
           required
+          className="flex-1 rounded-r-none border-r-0 focus-visible:ring-0 focus-visible:ring-offset-0"
         />
-        <button
-          type="button"
-          className=" bg-black text-white text-xs px-10 py-4 cursor-pointer"
+        <Button
+          type="submit"
+          className="rounded-l-none px-10 py-4 cursor-pointer"
         >
           SUBSCRIBE
-        </button>
+        </Button>
       </form>
-    </div>
+    </section>
   );
 };
 

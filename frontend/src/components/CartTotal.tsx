@@ -2,13 +2,23 @@ import Title from "./Title";
 import { useCartStore } from "../stores/cartStore";
 import { useProductStore } from "../stores/productStore";
 import { useShallow } from "zustand/shallow";
-
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 const CartTotal = () => {
-  const { delivery_fee, currency, getCartAmount } = useCartStore(
+  const { delivery_fee, currency, cartItems, getCartAmount } = useCartStore(
     useShallow((state) => ({
       delivery_fee: state.delivery_fee,
       currency: state.currency,
       getCartAmount: state.getCartAmount,
+      cartItems: state.cartItems,
     })),
   );
   const { products } = useProductStore();
@@ -17,35 +27,34 @@ const CartTotal = () => {
       <div className=" text-2xl">
         <Title text1={"CART"} text2={"TOTALS"} />
       </div>
-
-      <div className=" flex flex-col gap-2 mt-2 text-sm">
-        <div className=" flex justify-between ">
-          <p>Subtotal</p>
-          <p>
-            {currency}
-            {getCartAmount(products)}.00
-          </p>
-        </div>
-        <hr />
-        <div className="flex justify-between ">
-          <p>Shipping Fee</p>
-          <p>
-            {currency}
-            {delivery_fee}.00
-          </p>
-        </div>
-        <hr />
-        <div className=" flex justify-between">
-          <p>Total</p>
-          <p>
-            {currency}
-            {getCartAmount(products) === 0
-              ? 0
-              : getCartAmount(products) + delivery_fee}
-            .00
-          </p>
-        </div>
-      </div>
+      <Table>
+        <TableBody>
+          <TableRow>
+            <TableCell className="font-medium  items-end">Subtotal</TableCell>
+            <TableCell className="font-medium flex  justify-end ">
+              {currency}
+              {getCartAmount(products)}.00
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium">Shipping Fee</TableCell>
+            <TableCell className="font-medium flex  justify-end ">
+              {currency}
+              {delivery_fee}.00
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium">Total</TableCell>
+            <TableCell className="font-medium flex  justify-end ">
+              {currency}
+              {getCartAmount(products) === 0
+                ? 0
+                : getCartAmount(products) + delivery_fee}
+              .00
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
   );
 };
