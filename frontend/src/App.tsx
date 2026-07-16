@@ -18,6 +18,9 @@ import { useAuthStore } from "./stores/authStore";
 import { useCartStore } from "./stores/cartStore";
 import { useProductStore } from "./stores/productStore";
 import { useEffect } from "react";
+
+import { BugReportForm } from "./pages/BugReportForm";
+import Test from "./pages/Test";
 export const AppInitializer = () => {
   const { restoreSession } = useAuthStore();
   const { getUserCart } = useCartStore();
@@ -54,6 +57,8 @@ export const App = () => {
           <Route path="/product/:productId" element={<Product />} />
           <Route path="/place-order" element={<PlaceOrder />} />
           <Route path="/verify" element={<Verify />} />
+          <Route path="/test" element={<Test />} />
+          <Route path="/BugReportForm" element={<BugReportForm />} />
         </Routes>
         <Footer />
       </div>

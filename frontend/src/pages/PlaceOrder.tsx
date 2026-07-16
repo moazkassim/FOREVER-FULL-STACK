@@ -13,13 +13,8 @@ import { useShallow } from "zustand/shallow";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
-import { InboxIcon } from "lucide-react";
 import {
   Item,
-  ItemContent,
-  ItemDescription,
-  ItemMedia,
-  ItemTitle,
 } from "@/components/ui/item";
 interface Product {
   _id: string;
