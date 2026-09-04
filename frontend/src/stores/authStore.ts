@@ -1,14 +1,8 @@
 import { create } from "zustand";
 import api, { setAccessToken } from "../lib/axios";
 import { devtools } from "zustand/middleware";
+import type { AuthState } from "@/types/user.types";
 
-interface AuthState {
-  token: string;
-  sessionLoading: boolean;
-  setToken: (token: string) => void;
-  restoreSession: () => Promise<void>;
-  logout: () => Promise<void>;
-}
 export const useAuthStore = create<AuthState>()(
   devtools(
     (set) => ({

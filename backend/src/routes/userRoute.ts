@@ -18,4 +18,6 @@ userRouter.post("/login", validate(loginUserSchema), loginUser);
 userRouter.post("/admin", validate(adminLoginSchema), adminLogin);
 userRouter.post("/refresh", refreshToken);
 userRouter.post("/logout", logoutUser);
+
+// TODO: Forget Password
 export default userRouter;

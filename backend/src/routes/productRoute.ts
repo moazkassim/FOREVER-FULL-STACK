@@ -10,7 +10,6 @@ import adminAuth from "../middleware/adminAuth.js";
 import { validate } from "../middleware/validate.middleware.js";
 import {
   addProductSchema,
-  getSingleProductSchema,
   removeProductSchema,
 } from "../validations/product.validation.js";
 
@@ -33,7 +32,9 @@ productRouter.post(
   validate(removeProductSchema),
   removeProduct,
 );
-productRouter.post("/single", validate(getSingleProductSchema), singleProduct);
 productRouter.get("/list", listProduct);
+productRouter.get("/:productId", singleProduct);
+
+// TODO: implementing pagination
 
 export default productRouter;

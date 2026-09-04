@@ -1,20 +1,12 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { assets } from "../assets/assets";
 import RelatedProducts from "../components/RelatedProducts";
-import { useProductStore } from "../stores/productStore";
 import { useCartStore } from "../stores/cartStore";
 import { useShallow } from "zustand/shallow";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Item,
- 
-  ItemContent,
-  
-  ItemMedia,
-  ItemTitle,
-} from "@/components/ui/item";
+import { Item, ItemContent, ItemMedia, ItemTitle } from "@/components/ui/item";
 import {
   Card,
   CardDescription,
@@ -23,43 +15,32 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { BanknoteCheck, Check, CirclePercent, Repeat } from "lucide-react";
-interface Product {
-  _id: string;
-  name: string;
-  price: number;
-  description: string;
-  image: string[];
-  category: string;
-  subCategory: string;
-  sizes: string[];
-  bestseller: boolean;
-}
+import { BanknoteCheck, CirclePercent, Repeat } from "lucide-react";
+import { useProduct } from "@/hooks/useProducts";
+
 const Product = () => {
-  const { productId } = useParams();
-  const { products } = useProductStore();
+  const { productId } = useParams<{ productId: string }>();
+  const {
+    data: productData,
+    isPending,
+    error,
+  } = useProduct(productId as string);
+  const navigate = useNavigate();
+  const [image, setImage] = useState("");
+  const [size, setSize] = useState("");
+  useEffect(() => {
+    if (productData?.image?.length) {
+      setImage(productData.image[0]);
+    }
+  }, [productData]);
   const { currency, addToCart } = useCartStore(
     useShallow((state) => ({
       currency: state.currency,
       addToCart: state.addToCart,
     })),
   );
-  const [productData, setProductData] = useState<Product | null>(null);
-  const [image, setImage] = useState("");
-  const [size, setSize] = useState("");
-  const fetchProductData = async () => {
-    products.map((item) => {
-      if (item._id === productId) {
-        setProductData(item);
-        setImage(item.image[0]);
-        return null;
-      }
-    });
-  };
-  useEffect(() => {
-    fetchProductData();
-  }, [productId]);
-  if (products.length === 0) {
+
+  if (isPending) {
     return (
       <div className="border-t-2 pt-10">
         <div className="flex gap-12 flex-col sm:flex-row">
@@ -88,6 +69,7 @@ const Product = () => {
     );
   }
 
+  if (error) return "An error has occurred: " + error.message;
   return productData ? (
     <div className=" border-t-2 pt-10 transition-opacity ease-in duration-500 opacity-100">
       {/* product data */}
@@ -95,17 +77,23 @@ const Product = () => {
         {/* product image */}
         <div className=" flex-1 flex flex-col-reverse gap-3 sm:flex-row">
           <div className=" flex sm:flex-col overflow-x-auto sm:overflow-y-scroll justify-between sm:justify-normal sm:w-[18.7%] w-full">
-            {productData.image.map((item, index) => (
+            {productData.image.map((item: any, index: any) => (
               <img
                 src={item}
                 key={index}
-                className="w-[24%] sm:w-full sm:mb-3 flex-shrink-0 cursor-pointer"
+                className="w-[24%] sm:w-full sm:mb-3 shrink-0 cursor-pointer"
                 onClick={() => setImage(item)}
               />
             ))}
           </div>
           <div className="w-full sm:w-[80%]">
-            <img src={image} alt="" className="w-full h-auto" />
+            {image && (
+              <img
+                src={image}
+                className="w-full h-auto"
+                alt={productData.name}
+              />
+            )}
           </div>
         </div>
         {/* Product info */}
@@ -131,11 +119,11 @@ const Product = () => {
             <p> Select Size</p>
 
             <div className=" flex gap-2">
-              {productData.sizes.map((item, index) => (
+              {productData.sizes.map((item: any, index: any) => (
                 <Button
                   variant={item === size ? "default" : "outline"}
                   key={index}
-                  className="min-w-[3rem]"
+                  className="min-w-12"
                   onClick={() => setSize(item)}
                 >
                   {item}
@@ -185,7 +173,7 @@ const Product = () => {
         </div>
       </div>
       {/* {Description & review section } */}
-      <Tabs defaultValue="overview" className=" mt-20">
+      <Tabs defaultValue="description" className=" mt-20">
         <TabsList>
           <TabsTrigger value="description">Description</TabsTrigger>
           <TabsTrigger value="reviews">Reviews (122)</TabsTrigger>
@@ -230,7 +218,7 @@ const Product = () => {
   ) : (
     <div className="border-t-2 pt-10 flex flex-col items-center justify-center min-h-[40vh] gap-4">
       <p className="text-gray-500 text-lg">Product not found.</p>
-      <Button variant="outline" onClick={() => history.back()}>
+      <Button variant="outline" onClick={() => navigate(-1)}>
         Go Back
       </Button>
     </div>

@@ -16,4 +16,5 @@ const cartRouter = express.Router();
 cartRouter.post("/add", authUser, validate(addToCartSchema), addToCart);
 cartRouter.post("/get", authUser, validate(getUserCartSchema), getUserCart);
 cartRouter.post("/update", authUser, validate(updateCartSchema), updateCart);
+
 export default cartRouter;

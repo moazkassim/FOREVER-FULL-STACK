@@ -1,5 +1,3 @@
-import { useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
 import Title from "../components/Title";
 import CartTotal from "../components/CartTotal";
 import { assets } from "../assets/assets";
@@ -8,40 +6,70 @@ import api from "../lib/axios";
 import { getErrorMessage } from "../utils/getErrorMessage";
 import { useNavigate } from "react-router-dom";
 import { useCartStore } from "../stores/cartStore";
-import { useProductStore } from "../stores/productStore";
 import { useShallow } from "zustand/shallow";
 import { Input } from "@/components/ui/input";
-import { Field } from "@/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
-import {
-  Item,
-} from "@/components/ui/item";
-interface Product {
-  _id: string;
-  name: string;
-  price: number;
-  description: string;
-  image: string[];
-  category: string;
-  subCategory: string;
-  sizes: string[];
-  bestseller: boolean;
-}
-interface OrderItem extends Product {
-  size: string;
-  quantity: number;
-}
-interface FormDataState {
-  firstName: string;
-  lastName: string;
-  email: string;
-  street: string;
-  city: string;
-  state: string;
-  zipcode: string;
-  country: string;
-  phone: string;
-}
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm } from "react-hook-form";
+import * as z from "zod";
+import { Item } from "@/components/ui/item";
+import type { OrderItem, ProductType } from "@/types/product.types";
+import { useProducts } from "@/hooks/useProducts";
+const placeOrderSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email address"),
+  street: z.string().min(1, "Street is required"),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  zipcode: z
+    .string()
+    .min(1, "ZIP code is required")
+    .regex(/^[0-9]+$/, "Numbers only"),
+  country: z.string().min(1, "Country is required"),
+  phone: z.string().min(10, "Enter a valid phone number"),
+  method: z.enum(["cod", "stripe", "razorpay"]),
+});
+type PlaceOrderValues = z.infer<typeof placeOrderSchema>;
+
+const FormField = ({
+  name,
+  control,
+  label,
+  placeholder,
+  type = "text",
+  disabled,
+  className = "",
+}: {
+  name: keyof PlaceOrderValues;
+  control: any;
+  label?: string;
+  placeholder: string;
+  type?: string;
+  disabled?: boolean;
+  className?: string;
+}) => (
+  <Controller
+    name={name}
+    control={control}
+    render={({ field, fieldState }) => (
+      <Field data-invalid={fieldState.invalid} className={className}>
+        {label && <FieldLabel htmlFor={name}>{label}</FieldLabel>}
+        <Input
+          {...field}
+          id={name}
+          type={type}
+          placeholder={placeholder}
+          disabled={disabled}
+        />
+        {fieldState.invalid && (
+          <FieldError>{fieldState.error?.message}</FieldError>
+        )}
+      </Field>
+    )}
+  />
+);
 const PlaceOrder = () => {
   const { setCartItems, cartItems, getCartAmount, delivery_fee } = useCartStore(
     useShallow((state) => ({
@@ -51,262 +79,282 @@ const PlaceOrder = () => {
       delivery_fee: state.delivery_fee,
     })),
   );
-  const { products } = useProductStore();
-  const [method, setMethod] = useState("cod");
-  const [formData, setFormData] = useState<FormDataState>({
-    firstName: "",
-    lastName: "",
-    email: "",
-    street: "",
-    city: "",
-    state: "",
-    zipcode: "",
-    country: "",
-    phone: "",
-  });
+  const { data: products, isPending, error } = useProducts();
   const navigate = useNavigate();
-  const onChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {
-    const name = event.target.name;
-    const value = event.target.value;
-    setFormData((data) => ({ ...data, [name]: value }));
-  };
-  const onSubmitHandler = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    try {
-      const orderItems: OrderItem[] = [];
-      for (const items in cartItems) {
-        for (const item in cartItems[items]) {
-          if (cartItems[items][item] > 0) {
-            const matchedProduct = products.find(
-              (product) => product._id === items,
-            );
-            if (matchedProduct) {
-              const itemInfo: OrderItem = {
-                ...structuredClone(matchedProduct),
-                size: item,
-                quantity: cartItems[items][item],
-              };
-              orderItems.push(itemInfo);
-            }
+  const form = useForm<PlaceOrderValues>({
+    resolver: zodResolver(placeOrderSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      street: "",
+      city: "",
+      state: "",
+      zipcode: "",
+      country: "",
+      phone: "",
+      method: "cod",
+    },
+    mode: "onBlur",
+  });
+  const { isSubmitting } = form.formState;
+  const buildOrderItems = (): OrderItem[] => {
+    const orderItems: OrderItem[] = [];
+    Object.entries(cartItems).forEach(([productId, sizes]) => {
+      Object.entries(sizes).forEach(([size, quantity]) => {
+        if (quantity > 0) {
+          const matchedProduct = products.find(
+            (product: ProductType) => product._id === productId,
+          );
+          if (matchedProduct) {
+            orderItems.push({
+              ...structuredClone(matchedProduct),
+              size,
+              quantity,
+            });
           }
         }
-      }
-      let orderData = {
-        address: formData,
+      });
+    });
+
+    return orderItems;
+  };
+  const onSubmit = async (data: PlaceOrderValues) => {
+    try {
+      const orderItems = buildOrderItems();
+
+      const orderData = {
+        address: {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          street: data.street,
+          city: data.city,
+          state: data.state,
+          zipcode: data.zipcode,
+          country: data.country,
+          phone: data.phone,
+        },
         items: orderItems,
         amount: getCartAmount(products) + delivery_fee,
       };
-      switch (method) {
-        // api call for COD
-        case "cod":
-          try {
-            const response = await api.post("/api/order/place", orderData, {});
-            if (response.data.success) {
-              setCartItems({});
-              navigate("/orders");
-            } else {
-              toast.error(response.data.message);
-            }
-          } catch (error) {
-            console.log(error);
-            toast.error(getErrorMessage(error));
-          }
-          break;
-        case "razorpay":
-        case "stripe":
-          try {
-            const responseStripe = await api.post(
-              "/api/order/stripe",
-              orderData,
-            );
-            if (responseStripe.data.success) {
-              const { session_url } = responseStripe.data;
-              window.location.replace(session_url);
-            } else {
-              toast.error(responseStripe.data.message);
-            }
-          } catch (error) {
-            console.log(error);
-            toast.error(getErrorMessage(error));
-          }
-          break;
 
-        default:
+      switch (data.method) {
+        case "cod": {
+          const response = await api.post("/api/order/place", orderData);
+          if (response.data.success) {
+            setCartItems({});
+            navigate("/orders");
+          } else {
+            toast.error(response.data.message);
+          }
           break;
+        }
+
+        case "razorpay":
+        case "stripe": {
+          const response = await api.post("/api/order/stripe", orderData);
+          if (response.data.success) {
+            const { session_url } = response.data;
+            window.location.replace(session_url);
+          } else {
+            toast.error(response.data.message);
+          }
+          break;
+        }
       }
     } catch (error) {
-      console.log(error);
+      console.error("Order submission error:", error);
       toast.error(getErrorMessage(error));
     }
   };
+
   return (
     <form
-      onSubmit={onSubmitHandler}
-      className="flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh] border-t "
+      onSubmit={form.handleSubmit(onSubmit)}
+      noValidate
+      className="flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh] border-t"
     >
-      {/*----------------------------------- left side --------------------------------  */}
-      <div className="flex flex-col gap-4 w-full sm:max-w-[480px]">
-        <div className=" text-xl sm:text-2xl my-3">
+      {/* Left side - Delivery Information */}
+      <div className="flex flex-col gap-4 w-full sm:max-w-120">
+        <div className="text-xl sm:text-2xl my-3">
           <Title text1={"DELIVERY"} text2={"INFORMATION"} />
         </div>
-        <div className=" flex gap-3  w-full">
-          <Field>
-            <Input
-              required
-              type="text"
-              placeholder="First name"
-              className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
-              onChange={onChangeHandler}
-              name="firstName"
-              value={formData.firstName}
-            />
-          </Field>
-          <Field>
-            <Input
-              required
-              type="text"
-              placeholder="Last name"
-              className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
-              onChange={onChangeHandler}
-              name="lastName"
-              value={formData.lastName}
-            />
-          </Field>
-        </div>
-        <Field>
-          <Input
-            required
-            type="email"
-            placeholder="Email address"
-            className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
-            onChange={onChangeHandler}
-            name="email"
-            value={formData.email}
+
+        <div className="flex gap-3 w-full">
+          <FormField
+            name="firstName"
+            control={form.control}
+            placeholder="First name"
+            disabled={isSubmitting}
+            className="flex-1"
           />
-        </Field>
-        <Field>
-          <Input
-            required
-            type="text"
-            placeholder="Street"
-            className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
-            onChange={onChangeHandler}
-            name="street"
-            value={formData.street}
+          <FormField
+            name="lastName"
+            control={form.control}
+            placeholder="Last name"
+            disabled={isSubmitting}
+            className="flex-1"
           />
-        </Field>
-        <div className=" flex gap-3">
-          <Field>
-            <Input
-              required
-              type="text"
-              placeholder="City"
-              className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
-              onChange={onChangeHandler}
-              name="city"
-              value={formData.city}
-            />
-          </Field>
-          <Field>
-            <Input
-              required
-              type="text"
-              placeholder="State"
-              className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
-              onChange={onChangeHandler}
-              name="state"
-              value={formData.state}
-            />
-          </Field>
         </div>
-        <div className=" flex gap-3">
-          <Field>
-            <Input
-              required
-              type="number"
-              pattern="[0-9]*"
-              placeholder="ZIP Code"
-              className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
-              onChange={onChangeHandler}
-              name="zipcode"
-              value={formData.zipcode}
-            />
-          </Field>
-          <Field>
-            <Input
-              required
-              type="text"
-              placeholder="Country"
-              className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
-              onChange={onChangeHandler}
-              name="country"
-              value={formData.country}
-            />
-          </Field>
-        </div>
-        <Field>
-          <Input
-            required
-            type="tel"
-            placeholder="Phone"
-            className=" border border-gray-300 rounded py-1.5 px-3.5 w-full "
-            onChange={onChangeHandler}
-            name="phone"
-            value={formData.phone}
+
+        <FormField
+          name="email"
+          control={form.control}
+          type="email"
+          placeholder="Email address"
+          disabled={isSubmitting}
+        />
+
+        <FormField
+          name="street"
+          control={form.control}
+          placeholder="Street"
+          disabled={isSubmitting}
+        />
+
+        <div className="flex gap-3">
+          <FormField
+            name="city"
+            control={form.control}
+            placeholder="City"
+            disabled={isSubmitting}
+            className="flex-1"
           />
-        </Field>
+          <FormField
+            name="state"
+            control={form.control}
+            placeholder="State"
+            disabled={isSubmitting}
+            className="flex-1"
+          />
+        </div>
+
+        {/* ZIP Code & Country */}
+        <div className="flex gap-3">
+          <Controller
+            name="zipcode"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="flex-1">
+                <Input
+                  {...field}
+                  id="zipcode"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="ZIP Code"
+                  disabled={isSubmitting}
+                />
+                {fieldState.invalid && (
+                  <FieldError>{fieldState.error?.message}</FieldError>
+                )}
+              </Field>
+            )}
+          />
+          <FormField
+            name="country"
+            control={form.control}
+            placeholder="Country"
+            disabled={isSubmitting}
+            className="flex-1"
+          />
+        </div>
+
+        {/* Phone */}
+        <FormField
+          name="phone"
+          control={form.control}
+          type="tel"
+          placeholder="Phone"
+          disabled={isSubmitting}
+        />
       </div>
 
-      {/* ---------------------------------- Right Side ------------------------------------- */}
-      <div className=" mt-8">
-        <div className=" mt-8 min-w-80">
+      {/* Right side - Cart & Payment */}
+      <div className="mt-8">
+        <div className="mt-8 min-w-80">
           <CartTotal />
         </div>
-        <div className=" mt-12 flex flex-col items-center ">
-          <Title text1={"PAYMENT"} text2={"METHOD"} />
-          {/* ---------------------------payment method ---------------------------------- */}
-          <div className=" flex gap-3 flex-col lg:flex-row ">
-            <Item
-              variant="outline"
-              onClick={() => setMethod("stripe")}
-              className="flex  items-center  gap-2  p-4 cursor-pointer"
-            >
-              <p
-                className={`min-w-3.5 h-3.5 border rounded-full ${method === "stripe" ? "bg-green-400" : ""}`}
-              ></p>
 
-              <img src={assets.stripe_logo} alt="" className=" h-5 mx-4" />
-            </Item>
-            <Item
-              variant="outline"
-              onClick={() => setMethod("razorpay")}
-              className="flex items-center gap-3 border p-2 px-3 cursor-pointer"
-            >
-              <p
-                className={`min-w-3.5 h-3.5 border rounded-full ${method === "razorpay" ? "bg-green-400" : ""}`}
-              ></p>
-              <img src={assets.razorpay_logo} alt="" className=" h-5 mx-4" />
-            </Item>
-            <Item
-              variant="outline"
-              onClick={() => setMethod("cod")}
-              className="flex items-center gap-3 border p-2 px-3 cursor-pointer"
-            >
-              <p
-                className={`min-w-3.5 h-3.5 border rounded-full ${method === "cod" ? "bg-green-400" : ""}`}
-              ></p>
-              <p className="text-gray-400 text-sm font-m mx-4 ">
-                CASH ON DELIVERY
-              </p>
-            </Item>
-          </div>
-          <Field className=" flex items-center w-full text-end mt-8 ">
+        <div className="mt-12 flex flex-col items-center">
+          <Title text1={"PAYMENT"} text2={"METHOD"} />
+
+          {/* Payment Method Selection */}
+          <Controller
+            name="method"
+            control={form.control}
+            render={({ field }) => (
+              <div className="flex gap-3 flex-col lg:flex-row">
+                {/* Stripe */}
+                <Item
+                  variant="outline"
+                  onClick={() => field.onChange("stripe")}
+                  className={`flex items-center gap-2 p-4 cursor-pointer ${
+                    field.value === "stripe" ? "border-blue-500" : ""
+                  }`}
+                >
+                  <div
+                    className={`min-w-3.5 h-3.5 border rounded-full ${
+                      field.value === "stripe" ? "bg-green-400" : ""
+                    }`}
+                  />
+                  <img
+                    src={assets.stripe_logo}
+                    alt="Stripe"
+                    className="h-5 mx-4"
+                  />
+                </Item>
+
+                {/* Razorpay */}
+                <Item
+                  variant="outline"
+                  onClick={() => field.onChange("razorpay")}
+                  className={`flex items-center gap-3 border p-2 px-3 cursor-pointer ${
+                    field.value === "razorpay" ? "border-blue-500" : ""
+                  }`}
+                >
+                  <div
+                    className={`min-w-3.5 h-3.5 border rounded-full ${
+                      field.value === "razorpay" ? "bg-green-400" : ""
+                    }`}
+                  />
+                  <img
+                    src={assets.razorpay_logo}
+                    alt="Razorpay"
+                    className="h-5 mx-4"
+                  />
+                </Item>
+
+                {/* Cash on Delivery */}
+                <Item
+                  variant="outline"
+                  onClick={() => field.onChange("cod")}
+                  className={`flex items-center gap-3 border p-2 px-3 cursor-pointer ${
+                    field.value === "cod" ? "border-blue-500" : ""
+                  }`}
+                >
+                  <div
+                    className={`min-w-3.5 h-3.5 border rounded-full ${
+                      field.value === "cod" ? "bg-green-400" : ""
+                    }`}
+                  />
+                  <p className="text-gray-400 text-sm font-medium mx-4">
+                    CASH ON DELIVERY
+                  </p>
+                </Item>
+              </div>
+            )}
+          />
+
+          <Field className="flex items-center w-full text-end mt-8">
             <Button
               variant="outline"
               type="submit"
-              className="bg-black text-white max-w-54 px-16 py-3 text-sm cursor-pointer"
+              disabled={isSubmitting}
+              className="bg-black text-white max-w-54 px-16 py-3 text-sm cursor-pointer disabled:opacity-50"
             >
-              PLACE ORDER
+              {isSubmitting ? "PLACING ORDER..." : "PLACE ORDER"}
             </Button>
           </Field>
         </div>
@@ -314,5 +362,4 @@ const PlaceOrder = () => {
     </form>
   );
 };
-
 export default PlaceOrder;

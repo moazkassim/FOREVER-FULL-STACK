@@ -17,11 +17,7 @@ const About = () => {
         <Title text1={"ABOUT"} text2={"US"} />
       </div>
       <div className="my-10 flex flex-col md:flex-row gap-16">
-        <img
-          className=" w-full md:max-w-[450px]"
-          src={assets.about_img}
-          alt=""
-        />
+        <img className=" w-full md:max-w-112.5" src={assets.about_img} alt="" />
         <div className="flex flex-col justify-center gap-6 md:w-2/4 text-gray-600">
           <p>
             Forever was born out of a passion for innovation and a desire to

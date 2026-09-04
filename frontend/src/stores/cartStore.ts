@@ -4,27 +4,7 @@ import api from "../lib/axios";
 import { getErrorMessage } from "../utils/getErrorMessage";
 import { devtools } from "zustand/middleware";
 
-type CartData = {
-  [itemId: string]: {
-    [size: string]: number;
-  };
-};
-interface Product {
-  _id: string;
-  price: number;
-}
-interface CartState {
-  cartItems: CartData;
-  currency: string;
-  delivery_fee: number;
-  setCartItems: (items: CartData) => void;
-  clearCart: () => void;
-  addToCart: (itemId: string, size: string) => void;
-  getCartCount: () => number;
-  updateQuantity: (itemId: string, size: string, quantity: number) => void;
-  getUserCart: () => void;
-  getCartAmount: (products: Product[]) => number;
-}
+import type { CartState } from "@/types/cart.types";
 
 export const useCartStore = create<CartState>()(
   devtools(
@@ -35,6 +15,7 @@ export const useCartStore = create<CartState>()(
       setCartItems: (items) => {
         set({ cartItems: items });
       },
+      // TODO: migrate to mutation
       addToCart: async (itemId, size) => {
         if (!size) {
           toast.error("Select product size");
@@ -59,6 +40,7 @@ export const useCartStore = create<CartState>()(
           return { cartItems: cartData };
         });
       },
+      // TODO: migrate to mutation
       updateQuantity: async (itemId, size, quantity) => {
         const { cartItems } = get();
         if (!cartItems[itemId]) return;
@@ -86,6 +68,7 @@ export const useCartStore = create<CartState>()(
           toast.error(getErrorMessage(error));
         }
       },
+      // TODO:
       getCartAmount: (products) => {
         const { cartItems } = get();
         let totalAmount = 0;

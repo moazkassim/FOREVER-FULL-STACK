@@ -1,19 +1,12 @@
 import Title from "./Title";
 import { useCartStore } from "../stores/cartStore";
-import { useProductStore } from "../stores/productStore";
+
 import { useShallow } from "zustand/shallow";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { useProducts } from "@/hooks/useProducts";
+
 const CartTotal = () => {
-  const { delivery_fee, currency, cartItems, getCartAmount } = useCartStore(
+  const { delivery_fee, currency, getCartAmount } = useCartStore(
     useShallow((state) => ({
       delivery_fee: state.delivery_fee,
       currency: state.currency,
@@ -21,7 +14,11 @@ const CartTotal = () => {
       cartItems: state.cartItems,
     })),
   );
-  const { products } = useProductStore();
+  const { data: products, isPending, error } = useProducts();
+
+  if (isPending) return "Loading...";
+
+  if (error) return "An error has occurred: " + error.message;
   return (
     <div className=" w-full">
       <div className=" text-2xl">

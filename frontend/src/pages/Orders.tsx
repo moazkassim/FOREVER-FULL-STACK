@@ -28,26 +28,7 @@ import {
 
 import { Frown, Shirt } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-interface Product {
-  _id: string;
-  name: string;
-  price: number;
-  description: string;
-  image: string[];
-  category: string;
-  subCategory: string;
-  sizes: string[];
-  bestseller: boolean;
-}
-interface OrderItem extends Product {
-  size: string;
-  quantity: number;
-  status: string;
-  payment: boolean;
-  paymentMethod: string;
-  date: string;
-}
+import type { OrderItem } from "@/types/product.types";
 
 const Orders = () => {
   const { currency } = useCartStore();
@@ -120,9 +101,9 @@ const Orders = () => {
               <div className="flex items-center gap-4">
                 <Skeleton className="h-12 w-12 rounded-full" />
                 <div className="space-y-2">
-                  <Skeleton className="h-4 w-[350px]" />
-                  <Skeleton className="h-4 w-[250px]" />
-                  <Skeleton className="h-4 w-[250px]" />
+                  <Skeleton className="h-4 w-87.5" />
+                  <Skeleton className="h-4 w-62.5" />
+                  <Skeleton className="h-4 w-62.5" />
                 </div>
               </div>
             ))}

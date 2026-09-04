@@ -1,14 +1,10 @@
 import { useEffect, useState } from "react";
-
 import Title from "../components/Title";
-import { assets } from "../assets/assets";
 import CartTotal from "../components/CartTotal";
 import { useCartStore } from "../stores/cartStore";
-import { useProductStore } from "../stores/productStore";
+
 import { useNavigate } from "react-router-dom";
 import { useShallow } from "zustand/shallow";
-import { Skeleton } from "@/components/ui/skeleton";
-
 import { Frown, Shirt, Trash2 } from "lucide-react";
 import {
   Item,
@@ -28,26 +24,25 @@ import {
 } from "@/components/ui/empty";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-interface CartDisplayItem {
-  _id: string;
-  size: string;
-  quantity: number;
-}
+import { useProducts } from "@/hooks/useProducts";
+import type { CartDisplayItem } from "@/types/cart.types";
+import type { ProductType } from "@/types/product.types";
+import { useCartItems } from "@/hooks/useCart";
 
 const Cart = () => {
-  const { cartItems, updateQuantity, currency } = useCartStore(
+  const { data: products, isPending, error } = useProducts();
+  const { updateQuantity, currency } = useCartStore(
     useShallow((state) => ({
-      cartItems: state.cartItems,
       updateQuantity: state.updateQuantity,
       currency: state.currency,
     })),
   );
-  const { products } = useProductStore();
-  const [cartData, setCartData] = useState<CartDisplayItem[]>([]);
+  const { data: cartItems } = useCartItems();
 
+  const [cartData, setCartData] = useState<CartDisplayItem[]>([]);
   const navigate = useNavigate();
   useEffect(() => {
-    if (products.length > 0) {
+    if (products && products.length > 0) {
       let tempData: CartDisplayItem[] = [];
       for (const items in cartItems) {
         for (const item in cartItems[items]) {
@@ -63,6 +58,25 @@ const Cart = () => {
       setCartData(tempData);
     }
   }, [cartItems, products]);
+
+  if (isPending) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-lg">Loading cart...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-lg text-red-500">
+          An error has occurred: {error.message}
+        </div>
+      </div>
+    );
+  }
+
   if (cartData.length == 0)
     return (
       <Empty className="h-full bg-muted/30">
@@ -94,7 +108,7 @@ const Cart = () => {
         <div className="flex w-full max-w-lg flex-col gap-6">
           {cartData.map((item, index) => {
             const productData = products.find(
-              (product) => product._id === item._id,
+              (product: ProductType) => product._id === item._id,
             );
 
             return (
@@ -114,19 +128,19 @@ const Cart = () => {
                   <ItemContent>
                     <ItemTitle> {productData?.name}</ItemTitle>
                     <ItemDescription className="flex items-center gap-15 mt-2">
-                      <p className="text-black font-sm">
+                      <span className="text-black font-sm">
                         Price:{" "}
                         <span className="text-orange-700 font-sm">
                           {currency}
                           {productData?.price}
                         </span>
-                      </p>
-                      <p className="  bg-slate-50 text-black font-sm ">
+                      </span>
+                      <span className="  bg-slate-50 text-black font-sm ">
                         Size:{" "}
                         <span className="text-orange-700 font-sm">
                           {item.size}
                         </span>
-                      </p>
+                      </span>
                     </ItemDescription>
                   </ItemContent>
                 </div>
@@ -161,7 +175,7 @@ const Cart = () => {
         <div className=" flex justify-end ">
           <div
             className=" w-full flex items-center
-           flex-col  sm:w-[450px] "
+           flex-col  sm:w-112.5 "
           >
             <CartTotal />
             <Button

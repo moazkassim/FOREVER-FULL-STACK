@@ -4,9 +4,18 @@ import type { Request, Response } from "express";
 import productModel from "../models/productModel.js";
 import type {
   AddProductSchema,
-  GetSingleProductSchema,
   RemoveProductSchema,
 } from "../validations/product.validation.js";
+import mongoose from "mongoose";
+interface ProductFilter {
+  category?: { $in: string[] };
+  subCategory?: { $in: string[] };
+  bestseller?: boolean;
+  $or?: Array<{
+    name?: { $regex: string; $options: string };
+    description?: { $regex: string; $options: string };
+  }>;
+}
 // function for add product
 const addProduct = async (
   req: Request<{}, {}, AddProductSchema>,
@@ -70,10 +79,44 @@ const addProduct = async (
   }
 };
 
-// function for  list products
-const listProduct = async (_req: Request, res: Response) => {
+const listProduct = async (req: Request, res: Response) => {
   try {
-    const products = await productModel.find({});
+    const { category, subCategory, search, sortType, bestseller } = req.query;
+    const filter: ProductFilter = {};
+    if (category) {
+      const categories = Array.isArray(category)
+        ? (category as string[])
+        : [category as string];
+      filter.category = { $in: categories };
+    }
+    if (subCategory) {
+      const subCategories = Array.isArray(subCategory)
+        ? (subCategory as string[])
+        : [subCategory as string];
+      filter.subCategory = { $in: subCategories };
+    }
+    if (bestseller === "true" || bestseller === "1") {
+      filter.bestseller = true;
+    }
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search as string, $options: "i" } },
+        { description: { $regex: search as string, $options: "i" } },
+      ];
+    }
+    const sort: { [key: string]: 1 | -1 } = {};
+    switch (sortType) {
+      case "low-high":
+        sort.price = 1;
+        break;
+      case "high-low":
+        sort.price = -1;
+        break;
+      default:
+        sort.createdAt = -1;
+        break;
+    }
+    const products = await productModel.find(filter).sort(sort);
     res.json({ success: true, products });
   } catch (error: any) {
     console.log(error);
@@ -119,23 +162,38 @@ const removeProduct = async (
 
 // function for single  product
 const singleProduct = async (
-  req: Request<{}, {}, GetSingleProductSchema>,
+  req: Request<{ productId: string }>,
   res: Response,
 ) => {
   try {
-    const { productId } = req.body;
+    const { productId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product ID",
+      });
+    }
     const product = await productModel.findById(productId);
+
     if (!product) {
       return res.status(404).json({
         success: false,
         message: "Product not found.",
       });
     }
-    res.json({ success: true, product });
+
+    return res.status(200).json({
+      success: true,
+      product,
+    });
   } catch (error: any) {
     console.log(error);
-    res.json({ success: false, message: error.message });
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
-
 export { addProduct, listProduct, removeProduct, singleProduct };

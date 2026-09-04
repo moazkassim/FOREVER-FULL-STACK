@@ -1,5 +1,4 @@
 import { useMemo, useState, useCallback } from "react";
-
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Field,
@@ -17,13 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 import Title from "../components/Title";
 import ProductItem from "../components/ProductItem";
-
 import { assets } from "../assets/assets";
 import { useProductStore } from "../stores/productStore";
 import { useShallow } from "zustand/shallow";
+import { useProducts } from "@/hooks/useProducts";
+import type { ProductType } from "@/types/product.types";
 
 const CATEGORIES = ["Men", "Women", "Kids"];
 const SUB_CATEGORIES = [
@@ -38,9 +37,8 @@ const SORT_OPTIONS = [
 ];
 
 const Collection = () => {
-  const { products, search, showSearch } = useProductStore(
+  const { search, showSearch } = useProductStore(
     useShallow((state) => ({
-      products: state.products,
       search: state.search,
       showSearch: state.showSearch,
     })),
@@ -51,7 +49,25 @@ const Collection = () => {
   const [subCategory, setSubCategory] = useState<string[]>([]);
   const [sortType, setSortType] = useState("relevant");
 
-  // shadcn Checkbox passes the value directly, not a DOM event
+  // Build filters object for server
+  const filters = useMemo(
+    () => ({
+      category: category.length > 0 ? category : undefined,
+      subCategory: subCategory.length > 0 ? subCategory : undefined,
+      search: search && showSearch ? search : undefined,
+      sortType: sortType as any,
+    }),
+    [category, subCategory, search, showSearch, sortType],
+  );
+
+  // Fetch filtered products from server
+  const {
+    data: products = [],
+    isPending,
+    error,
+    isFetching,
+  } = useProducts(filters);
+
   const toggleCategory = useCallback((value: string) => {
     setCategory((prev) =>
       prev.includes(value) ? prev.filter((i) => i !== value) : [...prev, value],
@@ -67,41 +83,11 @@ const Collection = () => {
   const clearFilters = useCallback(() => {
     setCategory([]);
     setSubCategory([]);
+    setSortType("relevant");
   }, []);
 
-  // Single useMemo replaces useState + 3 useEffects
-  const filterProducts = useMemo(() => {
-    let result = products.slice();
-
-    // Search
-    if (search && showSearch) {
-      result = result.filter((item) =>
-        item.name.toLowerCase().includes(search.toLowerCase()),
-      );
-    }
-
-    // Category
-    if (category.length > 0) {
-      result = result.filter((item) => category.includes(item.category));
-    }
-
-    // Sub-category
-    if (subCategory.length > 0) {
-      result = result.filter((item) => subCategory.includes(item.subCategory));
-    }
-
-    // Sort
-    switch (sortType) {
-      case "low-high":
-        return [...result].sort((a, b) => a.price - b.price);
-      case "high-low":
-        return [...result].sort((a, b) => b.price - a.price);
-      default:
-        return result;
-    }
-  }, [products, search, showSearch, category, subCategory, sortType]);
-
-  const hasActiveFilters = category.length > 0 || subCategory.length > 0;
+  const hasActiveFilters =
+    category.length > 0 || subCategory.length > 0 || sortType !== "relevant";
 
   return (
     <div className="flex flex-col sm:flex-row gap-1 sm:gap-10 pt-10 border-t">
@@ -121,6 +107,7 @@ const Collection = () => {
           />
         </button>
 
+        {/* Category filter */}
         <div
           className={`border border-gray-300 pl-5 py-3 mt-6 ${
             showFilter ? "block" : "hidden"
@@ -178,7 +165,7 @@ const Collection = () => {
           </FieldSet>
         </div>
 
-        {/* Clear filters — only shows when filters are active */}
+        {/* Clear filters */}
         {hasActiveFilters && (
           <Button
             variant="ghost"
@@ -212,10 +199,29 @@ const Collection = () => {
           </Select>
         </div>
 
+        {/* Loading state */}
+        {isPending && (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-lg">Loading products...</div>
+          </div>
+        )}
+
+        {/* Background fetching indicator */}
+        {isFetching && !isPending && (
+          <div className="text-sm text-gray-400 mb-2">Updating...</div>
+        )}
+
+        {/* Error state */}
+        {error && (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-lg text-red-500">Error: {error.message}</div>
+          </div>
+        )}
+
         {/* No results */}
-        {products.length > 0 && filterProducts.length === 0 && (
+        {!isPending && !error && products.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 gap-4 text-gray-500">
-            <p className="text-lg">No products match your search.</p>
+            <p className="text-lg">No products match your filters.</p>
             {hasActiveFilters && (
               <Button variant="outline" onClick={clearFilters}>
                 Clear Filters
@@ -224,10 +230,10 @@ const Collection = () => {
           </div>
         )}
 
-        {/* Products */}
-        {filterProducts.length > 0 && (
+        {/* Products grid */}
+        {!isPending && !error && products.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6">
-            {filterProducts.map((item) => (
+            {products.map((item: ProductType) => (
               <ProductItem
                 key={item._id}
                 id={item._id}

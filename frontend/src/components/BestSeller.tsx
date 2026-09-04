@@ -1,26 +1,13 @@
-import { useEffect, useState } from "react";
-
 import Title from "./Title";
 import ProductItem from "./ProductItem";
-import { useProductStore } from "../stores/productStore";
-
-interface Product {
-  _id: string;
-  name: string;
-  price: number;
-  image: string[];
-  bestseller: boolean;
-  sizes: string[];
-}
+import { useBestsellers } from "@/hooks/useProducts";
+import type { ProductType } from "@/types/product.types";
 
 const BestSeller = () => {
-  const { products } = useProductStore();
+  const { data: products, isPending, error } = useBestsellers();
+  if (isPending) return "Loading...";
 
-  const [bestSeller, setBestSeller] = useState<Product[]>([]);
-  useEffect(() => {
-    const bestProduct = products.filter((item) => item.bestseller);
-    setBestSeller(bestProduct);
-  }, [products]);
+  if (error) return "An error has occurred: " + error.message;
 
   return (
     <div className=" my-10">
@@ -32,7 +19,7 @@ const BestSeller = () => {
         </p>
       </div>
       <div className=" grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 gap-y-6">
-        {bestSeller.map((item, index) => (
+        {products.map((item: ProductType, index: any) => (
           <ProductItem
             key={index}
             id={item._id}

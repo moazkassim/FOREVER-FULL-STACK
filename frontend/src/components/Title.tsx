@@ -8,7 +8,7 @@ const Title = ({ text1, text2 }: Title) => {
       <p className=" text-muted-foreground">
         {text1} <span className=" text-foreground font-medium">{text2}</span>
       </p>
-      <p className="w-8 sm:w-12 h-[1px] sm:h-[2px] bg-foreground"></p>
+      <p className="w-8 sm:w-12 h-px sm:h-0.5 bg-foreground"></p>
     </div>
   );
 };

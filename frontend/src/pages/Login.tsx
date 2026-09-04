@@ -76,7 +76,6 @@ const Login = () => {
     mode: "onBlur",
   });
 
- 
   useEffect(() => {
     form.reset({
       email: "",
@@ -84,30 +83,6 @@ const Login = () => {
       ...(isSignUp && { name: "" }),
     });
   }, [currentState, form, isSignUp]);
-
-
-  useEffect(() => {
-    if (token && !sessionLoading) {
-      navigate("/", { replace: true });
-    }
-  }, [token, sessionLoading, navigate]);
-
-
-  if (sessionLoading) {
-    return (
-      <div className="flex min-h-svh items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-
-  if (token) {
-    return null;
-  }
 
   const onSubmit = async (data: LoginValues | RegisterValues) => {
     setIsSubmitting(true);
@@ -150,7 +125,6 @@ const Login = () => {
     } catch (error: any) {
       console.error("Auth error:", error);
 
-    
       const errorMessage = getErrorMessage(error);
 
       if (error?.response?.status === 401) {
@@ -176,6 +150,27 @@ const Login = () => {
   const handleStateChange = (newState: "Login" | "Sign Up") => {
     setCurrentState(newState);
   };
+
+  useEffect(() => {
+    if (token && !sessionLoading) {
+      navigate("/", { replace: true });
+    }
+  }, [token, sessionLoading, navigate]);
+
+  if (sessionLoading) {
+    return (
+      <div className="flex min-h-svh items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (token) {
+    return null;
+  }
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center bg-muted p-6 md:p-10">
@@ -366,7 +361,6 @@ const Login = () => {
                     </Button>
                   </Field>
 
-                   
                   <FieldDescription className="text-center">
                     {currentState === "Login" ? (
                       <>
@@ -397,14 +391,13 @@ const Login = () => {
                 </FieldGroup>
               </form>
 
-          
               <div className="relative hidden bg-muted md:block">
                 <img
                   src={login_img}
                   alt="Login illustration"
                   className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
                 />
-                
+
                 <div className="absolute inset-0 bg-linear-to-t from-background/20 to-transparent" />
               </div>
             </CardContent>

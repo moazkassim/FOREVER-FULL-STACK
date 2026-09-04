@@ -1,23 +1,14 @@
-import { useEffect, useState } from "react";
-
 import Title from "./Title";
 import ProductItem from "./ProductItem";
-import { useProductStore } from "../stores/productStore";
 import { ItemGroup } from "./ui/item";
-interface Product {
-  _id: string;
-  name: string;
-  price: number;
-  image: string[];
-  bestseller: boolean;
-  sizes: string[];
-}
+import { useLatestProducts } from "@/hooks/useProducts";
+import type { Product } from "@/types/product.types";
+
 const LatestCollection = () => {
-  const { products } = useProductStore();
-  const [latestProducts, setLatestProducts] = useState<Product[]>([]);
-  useEffect(() => {
-    setLatestProducts(products.slice(0, 10));
-  }, [products]);
+  const { data: products, isPending, error } = useLatestProducts(10);
+  if (isPending) return "Loading...";
+
+  if (error) return "An error has occurred: " + error.message;
 
   return (
     <section className=" my-10">
@@ -33,7 +24,7 @@ const LatestCollection = () => {
         </div>
         {/* Rendering products */}
         <ItemGroup className=" grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 gap-y-6">
-          {latestProducts.map((item, index) => (
+          {products.map((item: Product, index: any) => (
             <ProductItem
               key={index}
               id={item._id}

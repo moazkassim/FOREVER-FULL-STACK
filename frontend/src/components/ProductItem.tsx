@@ -50,7 +50,7 @@ const ProductItem = ({ id, image, name, price, sizes }: ProductItem) => {
   const items = sizes.map((item) => {
     return { label: item, value: item };
   });
-  console.log("items", items);
+
   return (
     <>
       <Item className="p-0" variant="outline">
