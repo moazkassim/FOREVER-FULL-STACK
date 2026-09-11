@@ -2,9 +2,7 @@ import Title from "../components/Title";
 import CartTotal from "../components/CartTotal";
 import { assets } from "../assets/assets";
 import { toast } from "react-toastify";
-import api from "../lib/axios";
 import { getErrorMessage } from "../utils/getErrorMessage";
-import { useNavigate } from "react-router-dom";
 import { useCartStore } from "../stores/cartStore";
 import { useShallow } from "zustand/shallow";
 import { Input } from "@/components/ui/input";
@@ -12,26 +10,19 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import * as z from "zod";
 import { Item } from "@/components/ui/item";
-import type { OrderItem, ProductType } from "@/types/product.types";
+import type { ProductType } from "@/types/product.types";
 import { useProducts } from "@/hooks/useProducts";
-const placeOrderSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email address"),
-  street: z.string().min(1, "Street is required"),
-  city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State is required"),
-  zipcode: z
-    .string()
-    .min(1, "ZIP code is required")
-    .regex(/^[0-9]+$/, "Numbers only"),
-  country: z.string().min(1, "Country is required"),
-  phone: z.string().min(10, "Enter a valid phone number"),
-  method: z.enum(["cod", "stripe", "razorpay"]),
-});
-type PlaceOrderValues = z.infer<typeof placeOrderSchema>;
+import { getCartAmount } from "@/services/cartService";
+import { useCartItems } from "@/hooks/useCart";
+import {
+  placeOrderSchema,
+  type FormField,
+  type OrderItem,
+  type PlaceOrderValues,
+} from "@/types/order.type";
+import api from "@/lib/axios";
+import { useNavigate } from "react-router-dom";
 
 const FormField = ({
   name,
@@ -41,15 +32,7 @@ const FormField = ({
   type = "text",
   disabled,
   className = "",
-}: {
-  name: keyof PlaceOrderValues;
-  control: any;
-  label?: string;
-  placeholder: string;
-  type?: string;
-  disabled?: boolean;
-  className?: string;
-}) => (
+}: FormField) => (
   <Controller
     name={name}
     control={control}
@@ -71,16 +54,22 @@ const FormField = ({
   />
 );
 const PlaceOrder = () => {
-  const { setCartItems, cartItems, getCartAmount, delivery_fee } = useCartStore(
+  const { delivery_fee } = useCartStore(
     useShallow((state) => ({
-      setCartItems: state.setCartItems,
-      cartItems: state.cartItems,
-      getCartAmount: state.getCartAmount,
       delivery_fee: state.delivery_fee,
     })),
   );
-  const { data: products, isPending, error } = useProducts();
+  const { data: productData, isPending, error } = useProducts();
+  const { data: cart } = useCartItems();
   const navigate = useNavigate();
+  let cartAmount: any;
+  if (productData?.products)
+    cartAmount = getCartAmount(productData.products, cart.cartProducts);
+
+  if (isPending) return "Loading...";
+
+  if (error) return "An error has occurred: " + error.message;
+
   const form = useForm<PlaceOrderValues>({
     resolver: zodResolver(placeOrderSchema),
     defaultValues: {
@@ -100,10 +89,10 @@ const PlaceOrder = () => {
   const { isSubmitting } = form.formState;
   const buildOrderItems = (): OrderItem[] => {
     const orderItems: OrderItem[] = [];
-    Object.entries(cartItems).forEach(([productId, sizes]) => {
-      Object.entries(sizes).forEach(([size, quantity]) => {
+    Object.entries(cart.cartProducts).forEach(([productId, sizes]) => {
+      Object.entries(sizes as []).forEach(([size, quantity]) => {
         if (quantity > 0) {
-          const matchedProduct = products.find(
+          const matchedProduct = productData.products.find(
             (product: ProductType) => product._id === productId,
           );
           if (matchedProduct) {
@@ -136,14 +125,13 @@ const PlaceOrder = () => {
           phone: data.phone,
         },
         items: orderItems,
-        amount: getCartAmount(products) + delivery_fee,
+        amount: cartAmount + delivery_fee,
       };
 
       switch (data.method) {
         case "cod": {
           const response = await api.post("/api/order/place", orderData);
           if (response.data.success) {
-            setCartItems({});
             navigate("/orders");
           } else {
             toast.error(response.data.message);

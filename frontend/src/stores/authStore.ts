@@ -3,43 +3,58 @@ import api, { setAccessToken } from "../lib/axios";
 import { devtools } from "zustand/middleware";
 import type { AuthState } from "@/types/user.types";
 
+// ✅ Module-level flag to prevent double restoreSession calls
+let hasRestored = false;
+
 export const useAuthStore = create<AuthState>()(
   devtools(
-    (set) => ({
+    (set, get) => ({
       token: "",
+      isAuthenticated: false,
+
       setToken: (token: string) => {
         setAccessToken(token);
-        set({ token });
+        set({ token, isAuthenticated: !!token });
       },
+
       sessionLoading: true,
+
       restoreSession: async () => {
+        // ✅ Prevent double-calling
+        if (hasRestored) return;
+        hasRestored = true;
+
         try {
           const { data } = await api.post(
             "/api/user/refresh",
             {},
             { withCredentials: true },
           );
+
           if (data.success) {
-            set({ token: data.token });
+            set({ token: data.token, isAuthenticated: true });
             setAccessToken(data.token);
+          } else {
+            set({ token: "", isAuthenticated: false });
           }
         } catch {
-          // Refresh token expired or doesn't exist — user needs to log in
-          set({ token: "" });
+          // ✅ Expected when no refresh token exists
+          set({ token: "", isAuthenticated: false });
         } finally {
+          // ✅ CRITICAL: Always stop loading
           set({ sessionLoading: false });
         }
       },
+
       logout: async () => {
         try {
           await api.post("/api/user/logout");
         } catch (error) {
-          console.log(error);
+          console.log("Logout error:", error);
         } finally {
           setAccessToken("");
-          set({ token: "" });
-          setAccessToken("");
-          set({ token: "", sessionLoading: false });
+          set({ token: "", isAuthenticated: false, sessionLoading: false });
+          hasRestored = false; // ✅ Allow re-restore after login
         }
       },
     }),

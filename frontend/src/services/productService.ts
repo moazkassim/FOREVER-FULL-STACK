@@ -1,5 +1,6 @@
 import api from "@/lib/axios";
 import type {
+  PaginationInfo,
   ProductFilters,
   ProductResponse,
   ProductType,
@@ -9,7 +10,7 @@ import type {
 
 export const fetchProducts = async (
   filters: ProductFilters = {},
-): Promise<ProductType[]> => {
+): Promise<{ products: ProductType[]; pagination: PaginationInfo }> => {
   const params = new URLSearchParams();
 
   if (filters.category?.length) {
@@ -28,9 +29,16 @@ export const fetchProducts = async (
     params.append("sortType", filters.sortType);
   }
 
-  // ✅ Add bestseller
   if (filters.bestseller !== undefined) {
     params.append("bestseller", filters.bestseller.toString());
+  }
+
+  if (filters.page) {
+    params.append("page", filters.page.toString());
+  }
+
+  if (filters.limit) {
+    params.append("limit", filters.limit.toString());
   }
 
   const queryString = params.toString();
@@ -44,7 +52,23 @@ export const fetchProducts = async (
     throw new Error(response.data.message || "Failed to fetch products");
   }
 
-  return response.data.products;
+  return {
+    products: response.data.products,
+    pagination: response.data.pagination || {
+      currentPage: filters.page || 1,
+      totalPages: 1,
+      totalProducts: response.data.products.length,
+      hasNextPage: false,
+      hasPrevPage: false,
+      limit: filters.limit || response.data.products.length,
+    },
+  };
+};
+
+// Bestsellers helper
+export const fetchBestSellerProducts = async (): Promise<ProductType[]> => {
+  const result = await fetchProducts({ bestseller: true });
+  return result.products;
 };
 export const fetchSingleProduct = async (productId: string) => {
   const response = await api.get(`/api/product/${productId}`);
@@ -67,8 +91,4 @@ export const fetchLatestProducts = async (limit: any) => {
     console.log(error);
     throw error;
   }
-};
-
-export const fetchBestSellerProducts = async (): Promise<ProductType[]> => {
-  return fetchProducts({ bestseller: true });
 };

@@ -81,7 +81,15 @@ const addProduct = async (
 
 const listProduct = async (req: Request, res: Response) => {
   try {
-    const { category, subCategory, search, sortType, bestseller } = req.query;
+    const {
+      category,
+      subCategory,
+      search,
+      sortType,
+      bestseller,
+      page = "1",
+      limit = "12",
+    } = req.query;
     const filter: ProductFilter = {};
     if (category) {
       const categories = Array.isArray(category)
@@ -116,8 +124,28 @@ const listProduct = async (req: Request, res: Response) => {
         sort.createdAt = -1;
         break;
     }
-    const products = await productModel.find(filter).sort(sort);
-    res.json({ success: true, products });
+    const pageNumber = parseInt(page as string, 10) || 1;
+    const limitNumber = parseInt(limit as string, 10) || 12;
+    const skip = (pageNumber - 1) * limitNumber;
+    const total = await productModel.countDocuments(filter);
+    const totalPages = Math.ceil(total / limitNumber);
+    const products = await productModel
+      .find(filter)
+      .sort(sort)
+      .skip(skip)
+      .limit(limitNumber);
+    res.json({
+      success: true,
+      products,
+      pagination: {
+        currentPage: pageNumber,
+        totalPages,
+        totalProducts: total,
+        hasNextPage: pageNumber < totalPages,
+        hasPrevPage: pageNumber > 1,
+        limit: limitNumber,
+      },
+    });
   } catch (error: any) {
     console.log(error);
     res.json({ success: false, message: error.message });

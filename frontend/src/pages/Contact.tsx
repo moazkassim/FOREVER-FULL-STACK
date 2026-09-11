@@ -6,15 +6,11 @@ import { Button } from "@/components/ui/button";
 const Contact = () => {
   return (
     <div>
-      <div className="text-center text-2xl pt-10 border-t">
+      <div className="text-center text-2xl pt-16 ">
         <Title text1={"CONTACT"} text2={"US"} />
       </div>
       <div className=" my-10 flex flex-col justify-center md:flex-row gap-10 mb-28">
-        <img
-          src={assets.contact_img}
-          alt=""
-          className="w-full md:max-w-120"
-        />
+        <img src={assets.contact_img} alt="" className="w-full md:max-w-120" />
         <div className="flex flex-col justify-center items-start gap-6">
           <p className=" font-semibold text-xl text-gray-600">Our Store</p>
           <p className=" text-gray-500">

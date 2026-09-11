@@ -4,16 +4,17 @@ import {
   fetchProducts,
   fetchSingleProduct,
 } from "@/services/productService";
-import type { ProductFilters } from "@/types/product.types";
+import type { ProductFilters, ProductsResponse } from "@/types/product.types";
 
 import { useQuery } from "@tanstack/react-query";
 
 //
 export const useProducts = (filters: ProductFilters = {}) => {
-  return useQuery({
+  return useQuery<ProductsResponse>({
     queryKey: ["products", filters],
     queryFn: () => fetchProducts(filters),
     staleTime: 1000 * 60 * 5,
+    placeholderData: (previousData) => previousData,
   });
 };
 export const useProduct = (productId: string) => {

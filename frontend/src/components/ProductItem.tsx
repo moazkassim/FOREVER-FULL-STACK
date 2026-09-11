@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { useCartStore } from "../stores/cartStore";
 import { Button } from "@/components/ui/button";
-
 import {
   Item,
   ItemContent,
@@ -24,7 +23,6 @@ import {
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -39,18 +37,19 @@ import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { useShallow } from "zustand/shallow";
 import { toast } from "react-toastify";
+import { useAddToCartMutation } from "@/hooks/useCart";
 const ProductItem = ({ id, image, name, price, sizes }: ProductItem) => {
-  const { currency, addToCart } = useCartStore(
+  const { currency } = useCartStore(
     useShallow((state) => ({
       currency: state.currency,
-      addToCart: state.addToCart,
+      // addToCart: state.addToCart,
     })),
   );
+  const addToCart = useAddToCartMutation();
   const [selectedSizes, setSelectedSizes] = useState<string>("");
   const items = sizes.map((item) => {
     return { label: item, value: item };
   });
-
   return (
     <>
       <Item className="p-0" variant="outline">
@@ -65,7 +64,9 @@ const ProductItem = ({ id, image, name, price, sizes }: ProductItem) => {
             </div>
           </ItemHeader>
           <ItemContent className="p-2 ">
-            <ItemTitle className=" pb-1 text-sm">{name}</ItemTitle>
+            <ItemTitle className=" pb-1 text-sm">
+              <p className="hover:underline cursor-pointer">{name}</p>
+            </ItemTitle>
             <ItemDescription className=" text-sm font-medium">
               <span> {currency}</span>
               {price}
@@ -123,16 +124,20 @@ const ProductItem = ({ id, image, name, price, sizes }: ProductItem) => {
                 <Button variant="outline">Cancel</Button>
               </DialogClose>
               <Button
+                disabled={addToCart.isPending || !selectedSizes}
+                className="w-35 "
                 onClick={() => {
                   if (!selectedSizes) {
-                    toast.error("please select a size");
+                    toast.warn("please select a size");
                   } else {
-                    addToCart(id, selectedSizes);
-                    toast.success("Item added to cart");
+                    addToCart.mutate({
+                      itemId: id,
+                      size: selectedSizes,
+                    });
                   }
                 }}
               >
-                Add to cart
+                {addToCart.isPending ? "Adding..." : "ADD TO CART"}
               </Button>
             </DialogFooter>
           </DialogContent>

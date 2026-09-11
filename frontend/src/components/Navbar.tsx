@@ -1,8 +1,6 @@
-
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
 import { useAuthStore } from "../stores/authStore";
-import { useCartStore } from "../stores/cartStore";
 import { useProductStore } from "../stores/productStore";
 import { useShallow } from "zustand/shallow";
 
@@ -21,6 +19,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "./ui/button";
+import { useCartItems } from "@/hooks/useCart";
+import { useEffect, useRef, useState } from "react";
 
 const NAV_LINKS = [
   { to: "/", label: "HOME" },
@@ -28,13 +28,13 @@ const NAV_LINKS = [
   { to: "/about", label: "ABOUT" },
   { to: "/contact", label: "CONTACT" },
 ];
-
 const Navbar = () => {
   const navigate = useNavigate();
-
-  const { getCartCount } = useCartStore();
+  const [showNavbar, setShowNavbar] = useState(true);
+  const lastScrollY = useRef(0);
   const { setShowSearch } = useProductStore();
-
+  const { data: cart, isLoading: isCartLoading } = useCartItems();
+  const count = cart?.cartCount || 0;
   const { token, logout, sessionLoading } = useAuthStore(
     useShallow((state) => ({
       token: state.token,
@@ -42,16 +42,41 @@ const Navbar = () => {
       sessionLoading: state.sessionLoading,
     })),
   );
-
-  // Subscribe to cart count changes
-
   const handleSearchIcon = () => {
     setShowSearch(true);
     navigate("/collection");
   };
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
 
+      if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+        // Scrolling down
+        setShowNavbar(false);
+      } else {
+        // Scrolling up
+        setShowNavbar(true);
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
   return (
-    <div className="flex items-center justify-between py-5 font-medium">
+    <div
+      className={`
+    flex items-center justify-between p-3  font-medium w-full
+    fixed top-0 left-0 z-50
+    bg-gray-50/90 backdrop-blur-md border-b border-gray-200/70 shadow-s shadow-md
+    transition-transform duration-300 ease-in-out
+    ${showNavbar ? "translate-y-0" : "-translate-y-full"} 
+  `}
+    >
       {/* Logo */}
       <Link to="/">
         <img src={assets.logo} alt="logo" className="w-36" />
@@ -137,9 +162,11 @@ const Navbar = () => {
         {/* Cart */}
         <Link to="/cart" className="relative">
           <img src={assets.cart_icon} alt="cart" className="w-5 min-w-5" />
-          <p className="absolute -right-1.25 -bottom-1.25 text-center bg-black w-4 leading-4 text-white rounded-full text-[8px] aspect-square">
-            {getCartCount()}
-          </p>
+          {!isCartLoading && (
+            <p className="absolute -right-1.25 -bottom-1.25 text-center bg-black w-4 leading-4 text-white rounded-full text-[8px] aspect-square">
+              {count}
+            </p>
+          )}
         </Link>
 
         {/* Mobile menu trigger */}
@@ -234,5 +261,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-
-

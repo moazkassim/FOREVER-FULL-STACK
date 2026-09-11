@@ -17,6 +17,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { BanknoteCheck, CirclePercent, Repeat } from "lucide-react";
 import { useProduct } from "@/hooks/useProducts";
+import { toast } from "react-toastify";
+import { useAddToCartMutation } from "@/hooks/useCart";
 
 const Product = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -33,12 +35,24 @@ const Product = () => {
       setImage(productData.image[0]);
     }
   }, [productData]);
-  const { currency, addToCart } = useCartStore(
+
+  const { currency } = useCartStore(
     useShallow((state) => ({
       currency: state.currency,
-      addToCart: state.addToCart,
+      // addToCart: state.addToCart,
     })),
   );
+  const addToCart = useAddToCartMutation();
+  const handleAddToCart = () => {
+    if (!size) {
+      toast.warning("Please select a size first");
+      return;
+    }
+    addToCart.mutate({
+      itemId: productData._id,
+      size: size,
+    });
+  };
 
   if (isPending) {
     return (
@@ -71,7 +85,7 @@ const Product = () => {
 
   if (error) return "An error has occurred: " + error.message;
   return productData ? (
-    <div className=" border-t-2 pt-10 transition-opacity ease-in duration-500 opacity-100">
+    <div className="  pt-10 transition-opacity ease-in duration-500 opacity-100">
       {/* product data */}
       <div className="flex gap-12 sm:gap-12 flex-col sm:flex-row">
         {/* product image */}
@@ -98,7 +112,7 @@ const Product = () => {
         </div>
         {/* Product info */}
         <div className=" flex-1">
-          <h1 className=" font-medium text-2xl mt-2">{productData.name}</h1>
+          <h2 className=" font-medium text-2xl">{productData.name}</h2>
           <div className=" flex items-center gap-1 mt-2">
             <img src={assets.star_icon} className=" w-3" />
             <img src={assets.star_icon} className=" w-3" />
@@ -123,7 +137,7 @@ const Product = () => {
                 <Button
                   variant={item === size ? "default" : "outline"}
                   key={index}
-                  className="min-w-12"
+                  className="min-w-10 w-12 h-9"
                   onClick={() => setSize(item)}
                 >
                   {item}
@@ -133,11 +147,17 @@ const Product = () => {
           </div>
           <Button
             variant="ghost"
-            className=" bg-black text-white px-8 py-3 text-sm active:bg-gray-700 cursor-pointer"
-            onClick={() => addToCart(productData._id, size)}
+            className=" bg-black text-white w-35 h-12 px-8 py-3 text-sm active:bg-gray-700 cursor-pointer"
+            onClick={handleAddToCart}
+            disabled={addToCart.isPending || !size}
           >
-            ADD TO CART
+            {addToCart.isPending ? "Adding..." : "ADD TO CART"}
           </Button>
+          {addToCart.isError && (
+            <p className="text-red-500 text-sm mt-2">
+              {addToCart.error?.message}
+            </p>
+          )}
           <Separator className=" mt-8 sm:w-4/5" />
 
           <div className="text-sm  mt-5 flex flex-col gap-2 sm:w-4/5">

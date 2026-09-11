@@ -15,39 +15,38 @@ import SearchBar from "./components/SearchBar";
 import { ToastContainer } from "react-toastify";
 import Verify from "./pages/Verify";
 import { useAuthStore } from "./stores/authStore";
-import { useCartStore } from "./stores/cartStore";
+
 import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BugReportForm } from "./pages/BugReportForm";
 import Test from "./pages/Test";
 
-export const AppInitializer = () => {
-  const { restoreSession } = useAuthStore();
-  const { getUserCart } = useCartStore();
+export const App = () => {
+  const restoreSession = useAuthStore((s) => s.restoreSession);
+  const sessionLoading = useAuthStore((s) => s.sessionLoading);
+
 
   useEffect(() => {
-    const init = async () => {
-      await restoreSession();
-      const currentToken = useAuthStore.getState().token;
-      if (currentToken) {
-        getUserCart();
-      }
-    };
-    init();
-  }, []);
-  return null;
-};
+    restoreSession();
+  }, [restoreSession]);
 
-const queryClient = new QueryClient();
+  // ✅ Don't render routes until session check is done
+  if (sessionLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div>Loading...</div>
+      </div>
+    );
+  }
 
-export const App = () => {
+  const queryClient = new QueryClient();
   return (
     <>
       <QueryClientProvider client={queryClient}>
-        <AppInitializer />
-        <div className=" px-4 sm:px-[5vw] md:px-[7vw] lg:px[9vw]">
+        <Navbar />
+        <div className=" pt-16 px-4 sm:px-[5vw] md:px-[7vw] lg:px[9vw]">
           <ToastContainer />
-          <Navbar />
+
           <SearchBar />
           <Routes>
             <Route path="/" element={<Home />} />

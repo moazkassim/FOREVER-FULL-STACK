@@ -40,9 +40,7 @@ interface Order {
 const Orders = ({ token, backendUrl, currency }: LoginProps) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const fetchAllOrders = async () => {
-    if (!token) {
-      return null;
-    }
+  
     try {
       const response = await axios.post(
         backendUrl + "/api/order/list",

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import Title from "../components/Title";
 import ProductItem from "../components/ProductItem";
+import SimplePagination from "../components/SimplePagination";
 import { assets } from "../assets/assets";
 import { useProductStore } from "../stores/productStore";
 import { useShallow } from "zustand/shallow";
@@ -43,55 +44,74 @@ const Collection = () => {
       showSearch: state.showSearch,
     })),
   );
-
   const [showFilter, setShowFilter] = useState(false);
   const [category, setCategory] = useState<string[]>([]);
   const [subCategory, setSubCategory] = useState<string[]>([]);
   const [sortType, setSortType] = useState("relevant");
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Build filters object for server
+  // Build filters for server
   const filters = useMemo(
     () => ({
       category: category.length > 0 ? category : undefined,
       subCategory: subCategory.length > 0 ? subCategory : undefined,
       search: search && showSearch ? search : undefined,
-      sortType: sortType as any,
+      sortType: sortType !== "relevant" ? sortType : undefined,
+      page: currentPage,
+      limit: 12,
     }),
-    [category, subCategory, search, showSearch, sortType],
+    [category, subCategory, search, showSearch, sortType, currentPage],
   );
 
   // Fetch filtered products from server
-  const {
-    data: products = [],
-    isPending,
-    error,
-    isFetching,
-  } = useProducts(filters);
+  const { data, isPending, error } = useProducts(filters);
 
+  // Extract products and pagination
+  const products = data?.products || [];
+  const pagination = data?.pagination;
+
+  // Toggle category
   const toggleCategory = useCallback((value: string) => {
     setCategory((prev) =>
       prev.includes(value) ? prev.filter((i) => i !== value) : [...prev, value],
     );
+    setCurrentPage(1); // Reset to first page
   }, []);
 
+  // Toggle subcategory
   const toggleSubCategory = useCallback((value: string) => {
     setSubCategory((prev) =>
       prev.includes(value) ? prev.filter((i) => i !== value) : [...prev, value],
     );
+    setCurrentPage(1); // Reset to first page
   }, []);
 
+  // Handle sort change
+  const handleSortChange = (value: string) => {
+    setSortType(value);
+    setCurrentPage(1); // Reset to first page
+  };
+
+  // Clear filters
   const clearFilters = useCallback(() => {
     setCategory([]);
     setSubCategory([]);
     setSortType("relevant");
+    setCurrentPage(1);
   }, []);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const hasActiveFilters =
     category.length > 0 || subCategory.length > 0 || sortType !== "relevant";
 
   return (
-    <div className="flex flex-col sm:flex-row gap-1 sm:gap-10 pt-10 border-t">
-      {/* ── Filter sidebar ── */}
+    <div className="flex flex-col sm:flex-row gap-1 sm:gap-10 pt-10 ">
+      {/* Filter sidebar */}
       <div className="min-w-50">
         <button
           onClick={() => setShowFilter(!showFilter)}
@@ -178,12 +198,12 @@ const Collection = () => {
         )}
       </div>
 
-      {/* ── Product grid ── */}
+      {/* Product grid */}
       <div className="flex-1">
         <div className="flex justify-between items-center text-base sm:text-2xl mb-4">
           <Title text1={"ALL"} text2={"COLLECTIONS"} />
 
-          <Select value={sortType} onValueChange={setSortType}>
+          <Select value={sortType} onValueChange={handleSortChange}>
             <SelectTrigger className="w-full max-w-48">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
@@ -204,11 +224,6 @@ const Collection = () => {
           <div className="flex items-center justify-center py-20">
             <div className="text-lg">Loading products...</div>
           </div>
-        )}
-
-        {/* Background fetching indicator */}
-        {isFetching && !isPending && (
-          <div className="text-sm text-gray-400 mb-2">Updating...</div>
         )}
 
         {/* Error state */}
@@ -232,18 +247,28 @@ const Collection = () => {
 
         {/* Products grid */}
         {!isPending && !error && products.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6">
-            {products.map((item: ProductType) => (
-              <ProductItem
-                key={item._id}
-                id={item._id}
-                name={item.name}
-                price={item.price}
-                image={item.image}
-                sizes={item.sizes}
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6">
+              {products.map((item: ProductType) => (
+                <ProductItem
+                  key={item._id}
+                  id={item._id}
+                  name={item.name}
+                  price={item.price}
+                  image={item.image}
+                  sizes={item.sizes}
+                />
+              ))}
+            </div>
+
+            {pagination && (
+              <SimplePagination
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                onPageChange={handlePageChange}
               />
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>

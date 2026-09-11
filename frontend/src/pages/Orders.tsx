@@ -28,7 +28,7 @@ import {
 
 import { Frown, Shirt } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import type { OrderItem } from "@/types/product.types";
+import type { OrderItem } from "@/types/order.type";
 
 const Orders = () => {
   const { currency } = useCartStore();

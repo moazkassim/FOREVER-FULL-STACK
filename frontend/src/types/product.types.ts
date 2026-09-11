@@ -9,47 +9,46 @@ export interface ProductType {
   sizes: string[];
   bestseller: boolean;
 }
+
 export interface ProductState {
   search: string;
   showSearch: boolean;
   setSearch: (search: string) => void;
   setShowSearch: (show: boolean) => void;
 }
-export interface OrderItem extends ProductType {
-  size: string;
-  quantity: number;
-  status: string;
-  payment: boolean;
-  paymentMethod: string;
-  date: string;
-}
+
 export interface RelatedProductsProps {
   category: string;
   subCategory: string;
 }
-
-//still unused
 
 export interface ProductFilters {
   category?: string[];
   subCategory?: string[];
   search?: string;
   sortType?: string;
-  bestseller?: boolean; // ✅ Add this
+  bestseller?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginationInfo {
+  currentPage: number;
+  totalPages: number;
+  totalProducts: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+  limit: number;
+}
+
+export interface ProductsResponse {
+  products: ProductType[];
+  pagination: PaginationInfo;
 }
 
 export interface ProductResponse {
   success: boolean;
   products: ProductType[];
-  message?: string;
-}
-//still unused
-export interface PaginatedProductsResponse {
-  success: boolean;
-  products: ProductType[];
-  total: number;
-  currentPage: number;
-  totalPages: number;
-  hasMore: boolean;
+  pagination?: PaginationInfo;
   message?: string;
 }

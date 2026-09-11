@@ -16,9 +16,23 @@ export interface CartState {
   delivery_fee: number;
   setCartItems: (items: CartData) => void;
   clearCart: () => void;
-  addToCart: (itemId: string, size: string) => void;
-  getCartCount: () => number;
-  updateQuantity: (itemId: string, size: string, quantity: number) => void;
-  getUserCart: () => void;
-  getCartAmount: (products: ProductType[]) => number;
+}
+export interface AddToCartRequest {
+  itemId: string;
+  size: string;
+}
+
+export interface UpdateCartRequest {
+  itemId: string;
+  size: string;
+  quantity: number;
+  cartItems: ProductType[];
+}
+export interface CartItem {
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  size: string;
+  image: string;
 }

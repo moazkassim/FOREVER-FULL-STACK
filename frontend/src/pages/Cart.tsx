@@ -27,57 +27,76 @@ import { Input } from "@/components/ui/input";
 import { useProducts } from "@/hooks/useProducts";
 import type { CartDisplayItem } from "@/types/cart.types";
 import type { ProductType } from "@/types/product.types";
-import { useCartItems } from "@/hooks/useCart";
+import { useCartItems, useUpdateCartMutation } from "@/hooks/useCart";
+// TODO:fix delete a cart item
 
 const Cart = () => {
-  const { data: products, isPending, error } = useProducts();
-  const { updateQuantity, currency } = useCartStore(
+  const navigate = useNavigate();
+  const {
+    data: productsData,
+    isPending: isProductsLoading,
+    error: productsError,
+  } = useProducts();
+  const {
+    data: cart,
+    isLoading: isCartLoading,
+    error: cartError,
+  } = useCartItems();
+  const updateQuantity = useUpdateCartMutation();
+  const [cartData, setCartData] = useState<CartDisplayItem[]>([]);
+  const { currency } = useCartStore(
     useShallow((state) => ({
-      updateQuantity: state.updateQuantity,
+      // updateQuantity: state.updateQuantity,
       currency: state.currency,
+      // cartItems: state.cartItems,
     })),
   );
-  const { data: cartItems } = useCartItems();
 
-  const [cartData, setCartData] = useState<CartDisplayItem[]>([]);
-  const navigate = useNavigate();
   useEffect(() => {
-    if (products && products.length > 0) {
-      let tempData: CartDisplayItem[] = [];
-      for (const items in cartItems) {
-        for (const item in cartItems[items]) {
-          if (cartItems[items][item] > 0) {
-            tempData.push({
-              _id: items,
-              size: item,
-              quantity: cartItems[items][item],
-            });
-          }
+    if (!productsData?.products || !cart?.cartProducts) {
+      setCartData([]);
+      return;
+    }
+
+    const tempData: CartDisplayItem[] = [];
+    const cartProducts = cart.cartProducts;
+
+    for (const productId in cartProducts) {
+      const sizes = cartProducts[productId];
+      if (!sizes) continue;
+
+      for (const size in sizes) {
+        const quantity = sizes[size];
+        if (quantity > 0) {
+          tempData.push({
+            _id: productId,
+            size: size,
+            quantity: quantity,
+          });
         }
       }
-      setCartData(tempData);
     }
-  }, [cartItems, products]);
 
-  if (isPending) {
+    setCartData(tempData);
+  }, [productsData, cart]);
+
+  if (isProductsLoading || isCartLoading) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-lg">Loading cart...</div>
       </div>
     );
   }
-
-  if (error) {
+  if (productsError || cartError) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center h-full py-20">
         <div className="text-lg text-red-500">
-          An error has occurred: {error.message}
+          {productsError?.message || cartError?.message || "An error occurred"}
         </div>
       </div>
     );
   }
-
-  if (cartData.length == 0)
+  if (cartData.length === 0 || cart?.cartCount === 0)
     return (
       <Empty className="h-full bg-muted/30">
         <EmptyHeader>
@@ -100,21 +119,24 @@ const Cart = () => {
     );
 
   return (
-    <div className=" border-t pt-14">
+    <div className="pt-14">
       <div className=" text-2xl mb-3">
         <Title text1={"YOUR"} text2={"CART"} />
       </div>
-      <div className=" flex flex-col justify-between lg:flex-row items-center gap-10">
+      <div className=" flex flex-col justify-bSetween lg:flex-row items-center gap-10">
         <div className="flex w-full max-w-lg flex-col gap-6">
-          {cartData.map((item, index) => {
-            const productData = products.find(
+          {cartData.map((item) => {
+            const productData = productsData?.products?.find(
               (product: ProductType) => product._id === item._id,
             );
+            if (!productData) {
+              return null;
+            }
 
             return (
               <Item
                 variant="outline"
-                key={index}
+                key={`${item._id}-${item.size}`}
                 className="   grid grid-cols-[4fr_1fr] sm:grid-cols-[4fr_1.5fr] items-center gap-4"
               >
                 <div className=" flex items-start gap-6 ">
@@ -148,21 +170,34 @@ const Cart = () => {
                   <Input
                     type="number"
                     min={1}
-                    className=" border min-w-10 "
+                    className="border min-w-10"
                     defaultValue={item.quantity}
                     onChange={(e) => {
-                      e.target.value === "" || e.target.value === "0"
-                        ? null
-                        : updateQuantity(
-                            item._id,
-                            item.size,
-                            Number(e.target.value),
-                          );
+                      const value = e.target.value;
+                      if (value === "" || value === "0") return;
+
+                      if (cart?.cartProducts) {
+                        updateQuantity.mutate({
+                          itemId: item._id,
+                          size: item.size,
+                          quantity: Number(value),
+                          cartItems: cart.cartProducts,
+                        });
+                      }
                     }}
+                    disabled={updateQuantity.isPending}
                   />
+
                   <Button
                     className=" w-4 mr-2 sm:w-5 cursor-pointer"
-                    onClick={() => updateQuantity(item._id, item.size, 0)}
+                    onClick={() =>
+                      updateQuantity.mutate({
+                        itemId: item._id,
+                        size: item.size,
+                        quantity: 0,
+                        cartItems: cart.cartProducts,
+                      })
+                    }
                     variant="outline"
                   >
                     <Trash2 />
