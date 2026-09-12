@@ -39,7 +39,7 @@ const Product = () => {
   const { currency } = useCartStore(
     useShallow((state) => ({
       currency: state.currency,
-      // addToCart: state.addToCart,
+  
     })),
   );
   const addToCart = useAddToCartMutation();

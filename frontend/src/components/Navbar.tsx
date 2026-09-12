@@ -22,6 +22,8 @@ import { Button } from "./ui/button";
 import { useCartItems } from "@/hooks/useCart";
 import { useEffect, useRef, useState } from "react";
 
+import { useSessionRestore, useUserLogout } from "@/hooks/useUser";
+
 const NAV_LINKS = [
   { to: "/", label: "HOME" },
   { to: "/collection", label: "COLLECTION" },
@@ -30,31 +32,40 @@ const NAV_LINKS = [
 ];
 const Navbar = () => {
   const navigate = useNavigate();
+  const logout = useUserLogout();
   const [showNavbar, setShowNavbar] = useState(true);
   const lastScrollY = useRef(0);
-  const { setShowSearch } = useProductStore();
+  const logoutMutation = useUserLogout();
+
+  const { isLoading: sessionLoading } = useSessionRestore();
+  const { setShowSearch } = useProductStore(
+    useShallow((state) => ({
+      setShowSearch: state.setShowSearch,
+    })),
+  );
   const { data: cart, isLoading: isCartLoading } = useCartItems();
   const count = cart?.cartCount || 0;
-  const { token, logout, sessionLoading } = useAuthStore(
+  const { token, isAuthenticated } = useAuthStore(
     useShallow((state) => ({
       token: state.token,
-      logout: state.logout,
-      sessionLoading: state.sessionLoading,
+      isAuthenticated: state.isAuthenticated,
     })),
   );
   const handleSearchIcon = () => {
     setShowSearch(true);
     navigate("/collection");
   };
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
 
       if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
-        // Scrolling down
         setShowNavbar(false);
       } else {
-        // Scrolling up
         setShowNavbar(true);
       }
 
@@ -141,9 +152,10 @@ const Navbar = () => {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="cursor-pointer text-red-500 focus:text-red-500"
-                  onClick={logout}
+                  onClick={handleLogout}
+                  disabled={logoutMutation.isPending}
                 >
-                  Logout
+                  {logoutMutation.isPending ? "Logging out..." : "Logout"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             ) : (
@@ -229,13 +241,18 @@ const Navbar = () => {
                   </SheetClose>
                   <SheetFooter>
                     <SheetClose asChild>
-                      <Button
-                        className=" cursor-pointer text-red-500"
-                        variant="ghost"
-                        onClick={logout}
-                      >
-                        Logout
-                      </Button>
+                      {isAuthenticated && (
+                        <Button
+                          className=" cursor-pointer text-red-500"
+                          variant="ghost"
+                          onClick={() => logoutMutation.mutate()}
+                          disabled={logoutMutation.isPending}
+                        >
+                          {logoutMutation.isPending
+                            ? "Logging out..."
+                            : "Logout"}
+                        </Button>
+                      )}
                     </SheetClose>
                   </SheetFooter>
                 </>

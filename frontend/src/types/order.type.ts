@@ -34,3 +34,7 @@ export interface OrderItem extends ProductType {
   paymentMethod: string;
   date: string;
 }
+export interface VerifyStripeRequest {
+  success: string;
+  orderId: string;
+}

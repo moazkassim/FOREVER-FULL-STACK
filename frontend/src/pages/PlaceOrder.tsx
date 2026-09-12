@@ -21,9 +21,10 @@ import {
   type OrderItem,
   type PlaceOrderValues,
 } from "@/types/order.type";
-import api from "@/lib/axios";
-import { useNavigate } from "react-router-dom";
-
+import {
+  useCashOnDeliverPlaceOrder,
+  useStripePlaceOrder,
+} from "@/hooks/useOrder";
 const FormField = ({
   name,
   control,
@@ -59,17 +60,16 @@ const PlaceOrder = () => {
       delivery_fee: state.delivery_fee,
     })),
   );
+  const codPlaceOrder = useCashOnDeliverPlaceOrder();
+  const stripePlaceOrder = useStripePlaceOrder();
+  const isPlacingOrder = codPlaceOrder.isPending || stripePlaceOrder.isPending;
   const { data: productData, isPending, error } = useProducts();
   const { data: cart } = useCartItems();
-  const navigate = useNavigate();
   let cartAmount: any;
   if (productData?.products)
     cartAmount = getCartAmount(productData.products, cart.cartProducts);
-
   if (isPending) return "Loading...";
-
   if (error) return "An error has occurred: " + error.message;
-
   const form = useForm<PlaceOrderValues>({
     resolver: zodResolver(placeOrderSchema),
     defaultValues: {
@@ -86,7 +86,6 @@ const PlaceOrder = () => {
     },
     mode: "onBlur",
   });
-  const { isSubmitting } = form.formState;
   const buildOrderItems = (): OrderItem[] => {
     const orderItems: OrderItem[] = [];
     Object.entries(cart.cartProducts).forEach(([productId, sizes]) => {
@@ -100,12 +99,11 @@ const PlaceOrder = () => {
               ...structuredClone(matchedProduct),
               size,
               quantity,
-            });
+            } as any);
           }
         }
       });
     });
-
     return orderItems;
   };
   const onSubmit = async (data: PlaceOrderValues) => {
@@ -130,24 +128,12 @@ const PlaceOrder = () => {
 
       switch (data.method) {
         case "cod": {
-          const response = await api.post("/api/order/place", orderData);
-          if (response.data.success) {
-            navigate("/orders");
-          } else {
-            toast.error(response.data.message);
-          }
+          codPlaceOrder.mutate(orderData);
           break;
         }
-
         case "razorpay":
         case "stripe": {
-          const response = await api.post("/api/order/stripe", orderData);
-          if (response.data.success) {
-            const { session_url } = response.data;
-            window.location.replace(session_url);
-          } else {
-            toast.error(response.data.message);
-          }
+          stripePlaceOrder.mutate(orderData);
           break;
         }
       }
@@ -156,7 +142,6 @@ const PlaceOrder = () => {
       toast.error(getErrorMessage(error));
     }
   };
-
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
@@ -174,14 +159,14 @@ const PlaceOrder = () => {
             name="firstName"
             control={form.control}
             placeholder="First name"
-            disabled={isSubmitting}
+            disabled={isPlacingOrder}
             className="flex-1"
           />
           <FormField
             name="lastName"
             control={form.control}
             placeholder="Last name"
-            disabled={isSubmitting}
+            disabled={isPlacingOrder}
             className="flex-1"
           />
         </div>
@@ -191,14 +176,14 @@ const PlaceOrder = () => {
           control={form.control}
           type="email"
           placeholder="Email address"
-          disabled={isSubmitting}
+          disabled={isPlacingOrder}
         />
 
         <FormField
           name="street"
           control={form.control}
           placeholder="Street"
-          disabled={isSubmitting}
+          disabled={isPlacingOrder}
         />
 
         <div className="flex gap-3">
@@ -206,14 +191,14 @@ const PlaceOrder = () => {
             name="city"
             control={form.control}
             placeholder="City"
-            disabled={isSubmitting}
+            disabled={isPlacingOrder}
             className="flex-1"
           />
           <FormField
             name="state"
             control={form.control}
             placeholder="State"
-            disabled={isSubmitting}
+            disabled={isPlacingOrder}
             className="flex-1"
           />
         </div>
@@ -232,7 +217,7 @@ const PlaceOrder = () => {
                   inputMode="numeric"
                   pattern="[0-9]*"
                   placeholder="ZIP Code"
-                  disabled={isSubmitting}
+                  disabled={isPlacingOrder}
                 />
                 {fieldState.invalid && (
                   <FieldError>{fieldState.error?.message}</FieldError>
@@ -244,7 +229,7 @@ const PlaceOrder = () => {
             name="country"
             control={form.control}
             placeholder="Country"
-            disabled={isSubmitting}
+            disabled={isPlacingOrder}
             className="flex-1"
           />
         </div>
@@ -255,10 +240,9 @@ const PlaceOrder = () => {
           control={form.control}
           type="tel"
           placeholder="Phone"
-          disabled={isSubmitting}
+          disabled={isPlacingOrder}
         />
       </div>
-
       {/* Right side - Cart & Payment */}
       <div className="mt-8">
         <div className="mt-8 min-w-80">
@@ -339,10 +323,10 @@ const PlaceOrder = () => {
             <Button
               variant="outline"
               type="submit"
-              disabled={isSubmitting}
+              disabled={isPlacingOrder}
               className="bg-black text-white max-w-54 px-16 py-3 text-sm cursor-pointer disabled:opacity-50"
             >
-              {isSubmitting ? "PLACING ORDER..." : "PLACE ORDER"}
+              {isPlacingOrder ? "PLACING ORDER..." : "PLACE ORDER"}
             </Button>
           </Field>
         </div>

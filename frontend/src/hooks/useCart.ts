@@ -5,14 +5,13 @@ import { toast } from "react-toastify";
 
 export const useCartItems = () => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const sessionLoading = useAuthStore((s) => s.sessionLoading);
   const token = useAuthStore((s) => s.token);
 
   return useQuery({
     queryKey: ["cartItems"],
     queryFn: getUserCart,
-    // ✅ THE KEY LINE — only run when session is ready AND authenticated
-    enabled: !sessionLoading && isAuthenticated && !!token,
+
+    enabled: isAuthenticated && !!token,
     staleTime: 5 * 60 * 1000,
     retry: false,
   });

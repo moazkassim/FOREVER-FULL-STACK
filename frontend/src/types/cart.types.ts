@@ -14,7 +14,6 @@ export interface CartState {
   cartItems: CartData;
   currency: string;
   delivery_fee: number;
-  setCartItems: (items: CartData) => void;
   clearCart: () => void;
 }
 export interface AddToCartRequest {

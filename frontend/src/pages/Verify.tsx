@@ -1,15 +1,11 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import api from "../lib/axios";
-import { getErrorMessage } from "../utils/getErrorMessage";
-import { useCartStore } from "../stores/cartStore";
-import { useAuthStore } from "../stores/authStore";
 
+import { useVerifyStripe } from "@/hooks/useOrder";
 const Verify = () => {
-  const { setCartItems } = useCartStore();
-  const { token } = useAuthStore();
   const [searchParams, _setSearchParams] = useSearchParams();
+  const verifyStripe = useVerifyStripe();
   const success = searchParams.get("success");
   const orderId = searchParams.get("orderId");
   const navigate = useNavigate();
@@ -21,31 +17,11 @@ const Verify = () => {
       }, 3000);
       return;
     }
-    try {
-      if (!token) {
-        return null;
-      } else {
-        const response = await api.post("/api/order/verifyStripe", {
-          success,
-          orderId,
-        });
-
-        if (response.data.success) {
-          setCartItems({});
-          navigate("/orders");
-        } else {
-          navigate("/cart");
-        }
-      }
-    } catch (error) {
-      console.log(error);
-      toast.error(getErrorMessage(error));
-    }
+    verifyStripe.mutate({ success, orderId });
   };
   useEffect(() => {
     verifyPayment();
-  }, [token]);
+  }, []);
   return <div></div>;
 };
-
 export default Verify;

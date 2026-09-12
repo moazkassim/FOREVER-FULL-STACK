@@ -1,16 +1,14 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import api, { setAccessToken } from "../lib/axios";
+
 import { getErrorMessage } from "../utils/getErrorMessage";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/authStore";
 import { useShallow } from "zustand/shallow";
 import { cn } from "@/lib/utils";
 import login_img from "../assets/login_img.png";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -22,50 +20,31 @@ import {
   FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Loader2 } from "lucide-react"; // Assuming you have lucide-react for icons
-
-const loginSchema = z.object({
-  email: z.string().min(1, "Email is required").email("Invalid email address"),
-  password: z
-    .string()
-    .min(1, "Password is required")
-    .min(6, "Password must be at least 6 characters"),
-});
-
-const registerSchema = z.object({
-  name: z
-    .string()
-    .min(1, "Name is required")
-    .min(2, "Name must be at least 2 characters")
-    .max(50, "Name must be less than 50 characters"),
-  email: z.string().min(1, "Email is required").email("Invalid email address"),
-  password: z
-    .string()
-    .min(1, "Password is required")
-    .min(6, "Password must be at least 6 characters")
-    .max(128, "Password must be less than 128 characters"),
-});
-
-type LoginValues = z.infer<typeof loginSchema>;
-type RegisterValues = z.infer<typeof registerSchema>;
+import { Loader2 } from "lucide-react";
+import {
+  loginSchema,
+  registerSchema,
+  type LoginValues,
+  type RegisterValues,
+} from "@/types/user.types";
+import { useUserLogin, useUserRegister } from "@/hooks/useUser";
 
 const Login = () => {
   const [currentState, setCurrentState] = useState<"Login" | "Sign Up">(
     "Login",
   );
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { sessionLoading, token, setToken } = useAuthStore(
+  const { sessionLoading, token } = useAuthStore(
     useShallow((state) => ({
       sessionLoading: state.sessionLoading,
       token: state.token,
-      setToken: state.setToken,
     })),
   );
-
+  const register = useUserRegister();
+  const login = useUserLogin();
+  const isSubmitting = register.isPending || login.isPending;
   const navigate = useNavigate();
   const isSignUp = currentState === "Sign Up";
-
   const form = useForm<LoginValues | RegisterValues>({
     resolver: zodResolver(isSignUp ? registerSchema : loginSchema),
     defaultValues: {
@@ -75,7 +54,6 @@ const Login = () => {
     },
     mode: "onBlur",
   });
-
   useEffect(() => {
     form.reset({
       email: "",
@@ -85,42 +63,17 @@ const Login = () => {
   }, [currentState, form, isSignUp]);
 
   const onSubmit = async (data: LoginValues | RegisterValues) => {
-    setIsSubmitting(true);
-
     try {
       const { email, password } = data;
-
       if (currentState === "Sign Up") {
         const { name } = data as RegisterValues;
-
-        const response = await api.post("/api/user/register", {
+        register.mutate({
           name,
           email,
           password,
         });
-
-        if (response.data.success) {
-          setToken(response.data.token);
-          setAccessToken(response.data.token);
-          toast.success("Account created successfully! Welcome aboard! 🎉");
-          navigate("/", { replace: true });
-        } else {
-          toast.error(response.data.message || "Registration failed");
-        }
       } else {
-        const response = await api.post("/api/user/login", {
-          email,
-          password,
-        });
-
-        if (response.data.success) {
-          setToken(response.data.token);
-          setAccessToken(response.data.token);
-          toast.success("Welcome back! 👋");
-          navigate("/", { replace: true });
-        } else {
-          toast.error(response.data.message || "Login failed");
-        }
+        login.mutate({ email, password });
       }
     } catch (error: any) {
       console.error("Auth error:", error);
@@ -142,21 +95,16 @@ const Login = () => {
       } else {
         toast.error(errorMessage || "An unexpected error occurred");
       }
-    } finally {
-      setIsSubmitting(false);
     }
   };
-
   const handleStateChange = (newState: "Login" | "Sign Up") => {
     setCurrentState(newState);
   };
-
   useEffect(() => {
     if (token && !sessionLoading) {
       navigate("/", { replace: true });
     }
   }, [token, sessionLoading, navigate]);
-
   if (sessionLoading) {
     return (
       <div className="flex min-h-svh items-center justify-center">
@@ -167,11 +115,9 @@ const Login = () => {
       </div>
     );
   }
-
   if (token) {
     return null;
   }
-
   return (
     <div className="flex min-h-svh flex-col items-center justify-center bg-muted p-6 md:p-10">
       <div className="w-full max-w-sm md:max-w-4xl">

@@ -7,9 +7,7 @@ export const useCartStore = create<CartState>()(
       cartItems: {},
       currency: "$",
       delivery_fee: 10,
-      setCartItems: (items) => {
-        set({ cartItems: items });
-      },
+   
       clearCart: () => {
         set({ cartItems: {} });
       },

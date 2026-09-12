@@ -123,7 +123,7 @@ const Cart = () => {
       <div className=" text-2xl mb-3">
         <Title text1={"YOUR"} text2={"CART"} />
       </div>
-      <div className=" flex flex-col justify-bSetween lg:flex-row items-center gap-10">
+      <div className=" flex flex-col justify-between lg:flex-row items-center gap-10">
         <div className="flex w-full max-w-lg flex-col gap-6">
           {cartData.map((item) => {
             const productData = productsData?.products?.find(

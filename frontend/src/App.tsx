@@ -14,24 +14,24 @@ import Footer from "./components/Footer";
 import SearchBar from "./components/SearchBar";
 import { ToastContainer } from "react-toastify";
 import Verify from "./pages/Verify";
-import { useAuthStore } from "./stores/authStore";
-
-import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BugReportForm } from "./pages/BugReportForm";
 import Test from "./pages/Test";
+import { useSessionRestore } from "./hooks/useUser";
 
-export const App = () => {
-  const restoreSession = useAuthStore((s) => s.restoreSession);
-  const sessionLoading = useAuthStore((s) => s.sessionLoading);
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+const AppInitializer = ({ children }: { children: React.ReactNode }) => {
+  const { isLoading } = useSessionRestore();
 
-
-  useEffect(() => {
-    restoreSession();
-  }, [restoreSession]);
-
-  // ✅ Don't render routes until session check is done
-  if (sessionLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div>Loading...</div>
@@ -39,31 +39,36 @@ export const App = () => {
     );
   }
 
-  const queryClient = new QueryClient();
+  return <>{children}</>;
+};
+
+export default AppInitializer;
+export const App = () => {
   return (
     <>
       <QueryClientProvider client={queryClient}>
-        <Navbar />
-        <div className=" pt-16 px-4 sm:px-[5vw] md:px-[7vw] lg:px[9vw]">
-          <ToastContainer />
-
-          <SearchBar />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/collection" element={<Collection />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/orders" element={<Orders />} />
-            <Route path="/product/:productId" element={<Product />} />
-            <Route path="/place-order" element={<PlaceOrder />} />
-            <Route path="/verify" element={<Verify />} />
-            <Route path="/test" element={<Test />} />
-            <Route path="/BugReportForm" element={<BugReportForm />} />
-          </Routes>
-          <Footer />
-        </div>
+        <AppInitializer>
+          <Navbar />
+          <div className=" pt-16 px-4 sm:px-[5vw] md:px-[7vw] lg:px[9vw]">
+            <ToastContainer />
+            <SearchBar />
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/collection" element={<Collection />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/product/:productId" element={<Product />} />
+              <Route path="/place-order" element={<PlaceOrder />} />
+              <Route path="/verify" element={<Verify />} />
+              <Route path="/test" element={<Test />} />
+              <Route path="/BugReportForm" element={<BugReportForm />} />
+            </Routes>
+            <Footer />
+          </div>
+        </AppInitializer>
       </QueryClientProvider>
     </>
   );

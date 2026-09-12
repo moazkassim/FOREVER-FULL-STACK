@@ -24,7 +24,6 @@ import { useProductStore } from "../stores/productStore";
 import { useShallow } from "zustand/shallow";
 import { useProducts } from "@/hooks/useProducts";
 import type { ProductType } from "@/types/product.types";
-
 const CATEGORIES = ["Men", "Women", "Kids"];
 const SUB_CATEGORIES = [
   { value: "Topwear", label: "Top Wear" },
@@ -36,7 +35,6 @@ const SORT_OPTIONS = [
   { label: "Sort by: Low to High", value: "low-high" },
   { label: "Sort by: High to Low", value: "high-low" },
 ];
-
 const Collection = () => {
   const { search, showSearch } = useProductStore(
     useShallow((state) => ({
@@ -49,8 +47,6 @@ const Collection = () => {
   const [subCategory, setSubCategory] = useState<string[]>([]);
   const [sortType, setSortType] = useState("relevant");
   const [currentPage, setCurrentPage] = useState(1);
-
-  // Build filters for server
   const filters = useMemo(
     () => ({
       category: category.length > 0 ? category : undefined,
@@ -62,53 +58,38 @@ const Collection = () => {
     }),
     [category, subCategory, search, showSearch, sortType, currentPage],
   );
-
-  // Fetch filtered products from server
   const { data, isPending, error } = useProducts(filters);
-
-  // Extract products and pagination
   const products = data?.products || [];
   const pagination = data?.pagination;
-
-  // Toggle category
   const toggleCategory = useCallback((value: string) => {
     setCategory((prev) =>
       prev.includes(value) ? prev.filter((i) => i !== value) : [...prev, value],
     );
-    setCurrentPage(1); // Reset to first page
+    setCurrentPage(1); 
   }, []);
 
-  // Toggle subcategory
   const toggleSubCategory = useCallback((value: string) => {
     setSubCategory((prev) =>
       prev.includes(value) ? prev.filter((i) => i !== value) : [...prev, value],
     );
-    setCurrentPage(1); // Reset to first page
+    setCurrentPage(1); 
   }, []);
-
-  // Handle sort change
   const handleSortChange = (value: string) => {
     setSortType(value);
-    setCurrentPage(1); // Reset to first page
+    setCurrentPage(1); 
   };
-
-  // Clear filters
   const clearFilters = useCallback(() => {
     setCategory([]);
     setSubCategory([]);
     setSortType("relevant");
     setCurrentPage(1);
   }, []);
-
-  // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-
   const hasActiveFilters =
     category.length > 0 || subCategory.length > 0 || sortType !== "relevant";
-
   return (
     <div className="flex flex-col sm:flex-row gap-1 sm:gap-10 pt-10 ">
       {/* Filter sidebar */}
