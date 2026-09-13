@@ -1,9 +1,18 @@
-import { refreshSession, userLogin, userLogout, userRegister } from "@/services/userService";
+import {
+  refreshSession,
+  requestPasswordReset,
+  resetPassword,
+  userLogin,
+  userLogout,
+  userRegister,
+  verifyResetToken,
+} from "@/services/userService";
 import { useAuthStore } from "@/stores/authStore";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useShallow } from "zustand/shallow";
 import { toast } from "react-toastify";
+import { getErrorMessage } from "@/utils/getErrorMessage";
 export const useUserRegister = () => {
   const { setToken } = useAuthStore(
     useShallow((state) => ({
@@ -98,12 +107,45 @@ export const useSessionRestore = () => {
         clearAuth();
         return null;
       } finally {
-        
       }
     },
-    staleTime: Infinity, 
-    retry: false, 
+    staleTime: Infinity,
+    retry: false,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+  });
+};
+export const useForgotPassword = () => {
+  return useMutation({
+    mutationFn: requestPasswordReset,
+    onSuccess: (data) => {
+      toast.success(data.message || "Check your email for reset link");
+    },
+    onError: (error: any) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+};
+export const useVerifyResetToken = (id: string, token: string) => {
+  return useQuery({
+    queryKey: ["verify-reset-token", id, token],
+    queryFn: () => verifyResetToken(id, token),
+    enabled: !!id && !!token,
+    retry: false,
+    staleTime: Infinity,
+  });
+};
+export const useResetPassword = () => {
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: resetPassword,
+    onSuccess: (data) => {
+      toast.success(data.message || "Password reset successfully!");
+      navigate("/login");
+    },
+    onError: (error: any) => {
+      toast.error(getErrorMessage(error));
+    },
   });
 };

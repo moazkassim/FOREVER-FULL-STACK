@@ -1,6 +1,11 @@
 import api from "@/lib/axios";
 import { useAuthStore } from "@/stores/authStore";
-import type { LoginValues, RegisterValues } from "@/types/user.types";
+import type {
+  AuthMessageResponse,
+  LoginValues,
+  RegisterValues,
+  ResetPasswordRequest,
+} from "@/types/user.types";
 import { useQuery } from "@tanstack/react-query";
 
 export const userRegister = async ({
@@ -37,13 +42,12 @@ export const refreshSession = async () => {
 
 export const useSessionRestore = () => {
   const setToken = useAuthStore((state) => state.setToken);
-  const setSessionLoading = useAuthStore((state) => state.setSessionLoading);
+
   const clearAuth = useAuthStore((state) => state.clearAuth);
 
   return useQuery({
     queryKey: ["session"],
     queryFn: async () => {
-      setSessionLoading(true);
       try {
         const data = await refreshSession();
 
@@ -58,7 +62,6 @@ export const useSessionRestore = () => {
         clearAuth();
         return null;
       } finally {
-        setSessionLoading(false);
       }
     },
     staleTime: Infinity,
@@ -66,4 +69,34 @@ export const useSessionRestore = () => {
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });
+};
+export const requestPasswordReset = async (
+  email: string,
+): Promise<AuthMessageResponse> => {
+  const { data } = await api.post<AuthMessageResponse>(
+    "/api/user/forgot-password",
+    { email },
+  );
+  return data;
+};
+export const verifyResetToken = async (
+  id: string,
+  token: string,
+): Promise<AuthMessageResponse> => {
+  const { data } = await api.get<AuthMessageResponse>(
+    `/api/user/verify-reset-token/${id}/${token}`,
+  );
+  return data;
+};
+
+export const resetPassword = async ({
+  id,
+  token,
+  password,
+}: ResetPasswordRequest): Promise<AuthMessageResponse> => {
+  const { data } = await api.post<AuthMessageResponse>(
+    `/api/user/reset-password/${id}/${token}`,
+    { password },
+  );
+  return data;
 };

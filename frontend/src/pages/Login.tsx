@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 import { getErrorMessage } from "../utils/getErrorMessage";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/authStore";
 import { useShallow } from "zustand/shallow";
 import { cn } from "@/lib/utils";
@@ -34,9 +34,8 @@ const Login = () => {
     "Login",
   );
 
-  const { sessionLoading, token } = useAuthStore(
+  const { token } = useAuthStore(
     useShallow((state) => ({
-      sessionLoading: state.sessionLoading,
       token: state.token,
     })),
   );
@@ -101,11 +100,11 @@ const Login = () => {
     setCurrentState(newState);
   };
   useEffect(() => {
-    if (token && !sessionLoading) {
+    if (token) {
       navigate("/", { replace: true });
     }
-  }, [token, sessionLoading, navigate]);
-  if (sessionLoading) {
+  }, [token, navigate]);
+  if (isSubmitting) {
     return (
       <div className="flex min-h-svh items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -197,12 +196,12 @@ const Login = () => {
                         <div className="flex items-center justify-between">
                           <FieldLabel htmlFor="password">Password</FieldLabel>
                           {currentState === "Login" && (
-                            <a
-                              href="/forgot-password"
+                            <Link
+                              to="/forgot-password"
                               className="ml-auto text-sm underline-offset-2 hover:underline"
                             >
                               Forgot your password?
-                            </a>
+                            </Link>
                           )}
                         </div>
                         <Input

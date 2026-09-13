@@ -28,3 +28,17 @@ export interface AuthState {
   setToken: (token: string) => void;
   clearAuth: () => void;
 }
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  id: string;
+  token: string;
+  password: string;
+}
+
+export interface AuthMessageResponse {
+  success: boolean;
+  message: string;
+}

@@ -18,6 +18,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BugReportForm } from "./pages/BugReportForm";
 import Test from "./pages/Test";
 import { useSessionRestore } from "./hooks/useUser";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,6 +60,11 @@ export const App = () => {
               <Route path="/cart" element={<Cart />} />
               <Route path="/collection" element={<Collection />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route
+                path="/reset-password/:id/:token"
+                element={<ResetPassword />}
+              />
               <Route path="/contact" element={<Contact />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/product/:productId" element={<Product />} />

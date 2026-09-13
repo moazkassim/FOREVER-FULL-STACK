@@ -4,8 +4,8 @@ const allowedOrigins = [
   "http://localhost:5174",
 
   // Production - replace with your actual deployed URLs
-  "https://forever-frontend-delta-ruddy.vercel.app/",
-  "https://forever-admin-seven-kappa.vercel.app/",
+  "https://forever-frontend-delta-ruddy.vercel.app",
+  "https://forever-admin-seven-kappa.vercel.app",
 ];
 
 const corsOptions = {
@@ -26,7 +26,7 @@ const corsOptions = {
     }
   },
 
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: [
     "Content-Type",
     "token",
@@ -35,6 +35,7 @@ const corsOptions = {
   ],
   credentials: true,
   optionsSuccessStatus: 200,
+  maxAge: 86400,
 };
 
 export default corsOptions;

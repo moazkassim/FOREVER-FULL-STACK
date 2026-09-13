@@ -24,7 +24,16 @@ export const adminLoginSchema = z.object({
   email: z.string().email("Invalid email format").toLowerCase().trim(),
   password: z.string().min(1, "Password is required"),
 });
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Invalid email"),
+});
 
+export const resetPasswordSchema = z.object({
+  password: z.string().min(6),
+});
 export type RegisterUserInput = z.infer<typeof registerUserSchema>;
 export type LoginUserInput = z.infer<typeof loginUserSchema>;
 export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
+export type ForgetPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type ResetPasswordParams = z.infer<typeof resetPasswordSchema>;

@@ -4,19 +4,174 @@ import bcrypt from "bcrypt";
 import jwt, { type JwtPayload } from "jsonwebtoken";
 import type {
   AdminLoginInput,
+  ForgetPasswordInput,
   LoginUserInput,
   RegisterUserInput,
+  ResetPasswordInput,
+  ResetPasswordParams,
 } from "../validations/user.validation.js";
+import nodemailer from "nodemailer";
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+const requestPasswordReset = async (
+  req: Request<{}, {}, ForgetPasswordInput>,
+  res: Response,
+) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      return res.status(200).json({
+        success: true,
+        message: "If that email exists, a reset link has been sent",
+      });
+    }
+    const secret = process.env.JWT_SECRET + user.password;
 
+    const token = jwt.sign({ id: user._id, email: user.email }, secret, {
+      expiresIn: "1h",
+    });
+    const resetURL = `${process.env.FRONTEND_URL}/reset-password/${user._id}/${token}`;
+
+    const mailOptions = {
+      to: user.email,
+      from: process.env.EMAIL_USER,
+      subject: "Password Reset Request",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Password Reset Request</h2>
+          <p>You requested a password reset. Click the button below to reset your password:</p>
+          <a href="${resetURL}" 
+             style="display: inline-block; padding: 12px 24px; background-color: #000; color: #fff; text-decoration: none; border-radius: 4px; margin: 16px 0;">
+            Reset Password
+          </a>
+          <p>Or paste this link in your browser:</p>
+          <p style="word-break: break-all; color: #666;">${resetURL}</p>
+          <p><strong>This link expires in 1 hour.</strong></p>
+          <p>If you didn't request this, please ignore this email.</p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({
+      success: true,
+      message: "Password reset link sent",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+    });
+  }
+};
+const resetPassword = async (
+  req: Request<{ id: string; token: string }, {}, ResetPasswordInput>,
+  res: Response,
+) => {
+  const { id, token } = req.params;
+  const { password } = req.body;
+  if (!password || password.length < 6) {
+    return res.status(400).json({
+      success: false,
+      message: "Password must be at least 6 characters",
+    });
+  }
+  try {
+    const user = await userModel.findOne({ _id: id });
+    if (!user) {
+      return res.status(404).json({
+      
+        success: false,
+        message: "User doesn't exist",
+      });
+    }
+    const secret = process.env.JWT_SECRET + user.password;
+    try {
+      jwt.verify(token, secret);
+    } catch (err) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired reset link",
+      });
+    }
+    const salt = await bcrypt.genSalt(10);
+    const encryptedPassword = await bcrypt.hash(password, salt);
+    await userModel.updateOne(
+      {
+        _id: id,
+      },
+      {
+        $set: {
+          password: encryptedPassword,
+        },
+      },
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Password has been reset successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+};
+const verifyResetToken = async (
+  req: Request<ResetPasswordParams>,
+  res: Response,
+) => {
+  try {
+    const { id, token } = req.params;
+
+    const user = await userModel.findById(id);
+    if (!user) {
+      return res.status(404).json({
+
+        success: false,
+        message: "User doesn't exist",
+      });
+    }
+
+    const secret = process.env.JWT_SECRET + user.password;
+
+    try {
+      jwt.verify(token, secret);
+      return res.status(200).json({
+        success: true,
+        message: "Token is valid",
+      });
+    } catch {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired reset link",
+      });
+    }
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+    });
+  }
+};
 const loginUser = async (
   req: Request<{}, {}, LoginUserInput>,
   res: Response,
 ) => {
   try {
     const { email, password } = req.body;
-
     const user = await userModel.findOne({ email });
-
     if (!user) {
       return res.json({
         success: false,
@@ -30,7 +185,6 @@ const loginUser = async (
         message: "Invalid email or password",
       });
     }
-
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, {
       expiresIn: "15m",
     });
@@ -60,7 +214,6 @@ const loginUser = async (
     });
   }
 };
-
 //route for user register
 const registerUser = async (
   req: Request<{}, {}, RegisterUserInput>,
@@ -69,7 +222,7 @@ const registerUser = async (
   try {
     const { name, email, password } = req.body;
 
-    // checking user already exist or not
+    
     const exists = await userModel.findOne({ email });
 
     if (exists) {
@@ -79,7 +232,7 @@ const registerUser = async (
       });
       return;
     }
-    // hashing user password
+    
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -111,7 +264,6 @@ const registerUser = async (
     res.json({ success: false, message: error.message });
   }
 };
-
 // route for admin login
 const adminLogin = async (
   req: Request<{}, {}, AdminLoginInput>,
@@ -137,7 +289,6 @@ const adminLogin = async (
     res.json({ success: false, message: error.message });
   }
 };
-
 const refreshToken = async (req: Request, res: Response) => {
   const refreshToken = req.cookies.refreshToken as string | undefined;
 
@@ -167,7 +318,6 @@ const refreshToken = async (req: Request, res: Response) => {
     });
   }
 };
-
 const logoutUser = async (_req: Request, res: Response) => {
   try {
     res.clearCookie("refreshToken", {
@@ -183,4 +333,13 @@ const logoutUser = async (_req: Request, res: Response) => {
   }
 };
 
-export { loginUser, registerUser, adminLogin, refreshToken, logoutUser };
+export {
+  loginUser,
+  registerUser,
+  adminLogin,
+  refreshToken,
+  logoutUser,
+  requestPasswordReset,
+  resetPassword,
+  verifyResetToken,
+};
