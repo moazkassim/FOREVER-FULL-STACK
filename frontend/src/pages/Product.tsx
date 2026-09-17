@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { assets } from "../assets/assets";
-import RelatedProducts from "../components/RelatedProducts";
-import { useCartStore } from "../stores/cartStore";
+
 import { useShallow } from "zustand/shallow";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,6 +17,9 @@ import { BanknoteCheck, CirclePercent, Repeat } from "lucide-react";
 import { useProduct } from "@/hooks/useProducts";
 import { toast } from "react-toastify";
 import { useAddToCartMutation } from "@/hooks/useCart";
+import { useCartStore } from "@/stores/cartStore";
+import { assets } from "@/assets/assets";
+import RelatedProducts from "@/components/RelatedProducts";
 
 const Product = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -39,7 +40,6 @@ const Product = () => {
   const { currency } = useCartStore(
     useShallow((state) => ({
       currency: state.currency,
-  
     })),
   );
   const addToCart = useAddToCartMutation();

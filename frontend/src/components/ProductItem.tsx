@@ -123,22 +123,24 @@ const ProductItem = ({ id, image, name, price, sizes }: ProductItem) => {
               <DialogClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DialogClose>
-              <Button
-                disabled={addToCart.isPending || !selectedSizes}
-                className="w-35 "
-                onClick={() => {
-                  if (!selectedSizes) {
-                    toast.warn("please select a size");
-                  } else {
-                    addToCart.mutate({
-                      itemId: id,
-                      size: selectedSizes,
-                    });
-                  }
-                }}
-              >
-                {addToCart.isPending ? "Adding..." : "ADD TO CART"}
-              </Button>
+              <DialogClose asChild>
+                <Button
+                  disabled={addToCart.isPending || !selectedSizes}
+                  className="w-35 "
+                  onClick={() => {
+                    if (!selectedSizes) {
+                      toast.warn("please select a size");
+                    } else {
+                      addToCart.mutate({
+                        itemId: id,
+                        size: selectedSizes,
+                      });
+                    }
+                  }}
+                >
+                  {addToCart.isPending ? "Adding..." : "ADD TO CART"}
+                </Button>
+              </DialogClose>
             </DialogFooter>
           </DialogContent>
         </Dialog>

@@ -4,11 +4,15 @@ import bcrypt from "bcrypt";
 import jwt, { type JwtPayload } from "jsonwebtoken";
 import type {
   AdminLoginInput,
+  ChangePasswordInput,
+  DeleteAccountInput,
   ForgetPasswordInput,
+  GetUserProfileInput,
   LoginUserInput,
   RegisterUserInput,
   ResetPasswordInput,
-  ResetPasswordParams,
+  UpdateProfileInput,
+  VerifyResetTokenInput,
 } from "../validations/user.validation.js";
 import nodemailer from "nodemailer";
 const transporter = nodemailer.createTransport({
@@ -92,7 +96,6 @@ const resetPassword = async (
     const user = await userModel.findOne({ _id: id });
     if (!user) {
       return res.status(404).json({
-      
         success: false,
         message: "User doesn't exist",
       });
@@ -129,7 +132,7 @@ const resetPassword = async (
   }
 };
 const verifyResetToken = async (
-  req: Request<ResetPasswordParams>,
+  req: Request<VerifyResetTokenInput>,
   res: Response,
 ) => {
   try {
@@ -138,7 +141,6 @@ const verifyResetToken = async (
     const user = await userModel.findById(id);
     if (!user) {
       return res.status(404).json({
-
         success: false,
         message: "User doesn't exist",
       });
@@ -173,14 +175,14 @@ const loginUser = async (
     const { email, password } = req.body;
     const user = await userModel.findOne({ email });
     if (!user) {
-      return res.json({
+      return res.status(401).json({
         success: false,
-        message: "User doesn't exist",
+        message: "Invalid email or password",
       });
     }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         message: "Invalid email or password",
       });
@@ -204,11 +206,7 @@ const loginUser = async (
 
     return res.json({ success: true, token });
   } catch (error) {
-    console.error(
-      "Login error:",
-      error instanceof Error ? error.message : error,
-    );
-    res.json({
+    return res.status(500).json({
       success: false,
       message: "Internal server error",
     });
@@ -220,9 +218,8 @@ const registerUser = async (
   res: Response,
 ) => {
   try {
-    const { name, email, password } = req.body;
+    const { firstName, lastName, email, password } = req.body;
 
-    
     const exists = await userModel.findOne({ email });
 
     if (exists) {
@@ -232,11 +229,16 @@ const registerUser = async (
       });
       return;
     }
-    
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = new userModel({ name, email, password: hashedPassword });
+    const newUser = new userModel({
+      firstName,
+      lastName,
+      email,
+      password: hashedPassword,
+    });
     const user = await newUser.save();
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, {
@@ -332,6 +334,204 @@ const logoutUser = async (_req: Request, res: Response) => {
     return res.status(500).json({ success: false, message });
   }
 };
+const getProfile = async (
+  req: Request<{}, {}, GetUserProfileInput>,
+  res: Response,
+) => {
+  try {
+    const userId = (req as any).userId || req.body.userId;
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.json({ success: true, user });
+  } catch (error: any) {
+    console.error("Get profile error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+    });
+  }
+};
+const updateProfile = async (
+  req: Request<{}, {}, UpdateProfileInput>,
+  res: Response,
+) => {
+  try {
+    const userId = (req as any).userId || req.body.userId;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authorized",
+      });
+    }
+
+    const allowedUpdates = [
+      "firstName",
+      "lastName",
+      "phone",
+
+      "location",
+      "street",
+      "city",
+      "state",
+      "zipcode",
+    ];
+
+    const updates: Record<string, any> = {};
+    allowedUpdates.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    });
+
+    const updatedUser = await userModel.findByIdAndUpdate(
+      userId,
+      { $set: updates },
+      { new: true, runValidators: true },
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Profile updated successfully",
+      user: updatedUser,
+    });
+  } catch (error: any) {
+    console.error("Update profile error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+    });
+  }
+};
+const changePassword = async (
+  req: Request<{}, {}, ChangePasswordInput>,
+  res: Response,
+) => {
+  try {
+    const userId = (req as any).userId || req.body.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authorized",
+      });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 8 characters",
+      });
+    }
+
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: "Current password is incorrect",
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    await userModel.updateOne(
+      { _id: userId },
+      { $set: { password: hashedPassword } },
+    );
+
+    return res.json({
+      success: true,
+      message: "Password changed successfully",
+    });
+  } catch (error: any) {
+    console.error("Change password error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+    });
+  }
+};
+const deleteAccount = async (
+  req: Request<{}, {}, DeleteAccountInput>,
+  res: Response,
+) => {
+  try {
+    const userId = (req as any).userId || req.body.userId;
+    const { password } = req.body;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authorized",
+      });
+    }
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        message: "Password is required to delete your account",
+      });
+    }
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect password",
+      });
+    }
+    await userModel.findByIdAndDelete(userId);
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    });
+    return res.json({
+      success: true,
+      message: "Account deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete account error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+    });
+  }
+};
 
 export {
   loginUser,
@@ -342,4 +542,8 @@ export {
   requestPasswordReset,
   resetPassword,
   verifyResetToken,
+  getProfile,
+  updateProfile,
+  changePassword,
+  deleteAccount,
 };

@@ -12,7 +12,10 @@ export const authUser = async (
   if (!token) {
     return res
       .status(401)
-      .json({ success: false, message: "No token, authorization denied, Login again" });
+      .json({
+        success: false,
+        message: "No token, authorization denied, Login again",
+      });
   }
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
@@ -20,6 +23,7 @@ export const authUser = async (
   }
   try {
     const token_decoded = jwt.verify(token, jwtSecret) as JwtPayload;
+    if (!req.body) req.body = {};
     req.body.userId = token_decoded.id;
     next();
   } catch (error: any) {

@@ -1,7 +1,6 @@
-import Title from "../components/Title";
-import { assets } from "../assets/assets";
-import NewsletterBox from "../components/NewsletterBox";
-
+import { assets } from "@/assets/assets";
+import NewsletterBox from "@/components/NewsletterBox";
+import Title from "@/components/Title";
 import {
   Item,
   ItemContent,

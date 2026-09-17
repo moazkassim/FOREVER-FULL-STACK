@@ -32,7 +32,7 @@ const NAV_LINKS = [
 ];
 const Navbar = () => {
   const navigate = useNavigate();
-  const logout = useUserLogout();
+
   const [showNavbar, setShowNavbar] = useState(true);
   const lastScrollY = useRef(0);
   const logoutMutation = useUserLogout();

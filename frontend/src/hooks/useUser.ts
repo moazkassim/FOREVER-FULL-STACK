@@ -1,7 +1,11 @@
 import {
+  changePassword,
+  deleteUserAccount,
+  fetchProfile,
   refreshSession,
   requestPasswordReset,
   resetPassword,
+  updateProfile,
   userLogin,
   userLogout,
   userRegister,
@@ -13,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 import { useShallow } from "zustand/shallow";
 import { toast } from "react-toastify";
 import { getErrorMessage } from "@/utils/getErrorMessage";
+import type { UpdateProfileRequest } from "@/types/user.types";
 export const useUserRegister = () => {
   const { setToken } = useAuthStore(
     useShallow((state) => ({
@@ -40,11 +45,8 @@ export const useUserRegister = () => {
   });
 };
 export const useUserLogin = () => {
-  const { setToken } = useAuthStore(
-    useShallow((state) => ({
-      setToken: state.setToken,
-    })),
-  );
+  const setToken = useAuthStore((s) => s.setToken);
+  const setUser = useAuthStore((s) => s.setUser);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   return useMutation({
@@ -52,20 +54,20 @@ export const useUserLogin = () => {
     onSuccess: (data) => {
       if (data.success && data.token) {
         setToken(data.token);
+        setUser(data.user);
         toast.success("Welcome back! 👋");
         queryClient.invalidateQueries({ queryKey: ["session"] });
         navigate("/", { replace: true });
       }
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Login failed", {
+      toast.error(getErrorMessage(error) || "Login failed", {
         position: "bottom-right",
         autoClose: 3000,
       });
     },
   });
 };
-
 export const useUserLogout = () => {
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const navigate = useNavigate();
@@ -103,7 +105,6 @@ export const useSessionRestore = () => {
         clearAuth();
         return null;
       } catch {
-        // Expected when no refresh token exists
         clearAuth();
         return null;
       } finally {
@@ -142,6 +143,73 @@ export const useResetPassword = () => {
     mutationFn: resetPassword,
     onSuccess: (data) => {
       toast.success(data.message || "Password reset successfully!");
+      navigate("/login");
+    },
+    onError: (error: any) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+};
+export const useProfile = () => {
+  const token = useAuthStore((s) => s.token);
+
+  return useQuery({
+    queryKey: ["profile"],
+    queryFn: fetchProfile,
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+};
+export const useUpdateProfile = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateProfileRequest) => updateProfile(data),
+    onMutate: async (newData) => {
+      await queryClient.cancelQueries({ queryKey: ["profile"] });
+      const previousProfile = queryClient.getQueryData(["profile"]);
+      queryClient.setQueryData(["profile"], (old: any) => {
+        if (!old) return old;
+        return { ...old, ...newData };
+      });
+      return { previousProfile };
+    },
+    onSuccess: (updatedUser) => {
+      queryClient.setQueryData(["profile"], updatedUser);
+      toast.success("Profile updated successfully!");
+    },
+    onError: (error: any, variables, context) => {
+      if (context?.previousProfile) {
+        queryClient.setQueryData(["profile"], context.previousProfile);
+      }
+      toast.error(getErrorMessage(error));
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+};
+export const useChangePassword = () => {
+  return useMutation({
+    mutationFn: changePassword,
+    onSuccess: () => {
+      toast.success("Password changed successfully!");
+    },
+    onError: (error: any) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+};
+export const useDeleteAccount = () => {
+  const clearAuth = useAuthStore((s) => s.clearAuth);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteUserAccount,
+    onSuccess: () => {
+      clearAuth();
+      queryClient.clear();
       navigate("/login");
     },
     onError: (error: any) => {

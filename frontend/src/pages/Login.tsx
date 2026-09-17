@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-
-import { getErrorMessage } from "../utils/getErrorMessage";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuthStore } from "../stores/authStore";
 import { useShallow } from "zustand/shallow";
 import { cn } from "@/lib/utils";
 import login_img from "../assets/login_img.png";
@@ -28,6 +25,8 @@ import {
   type RegisterValues,
 } from "@/types/user.types";
 import { useUserLogin, useUserRegister } from "@/hooks/useUser";
+import { useAuthStore } from "@/stores/authStore";
+import { getErrorMessage } from "@/utils/getErrorMessage";
 
 const Login = () => {
   const [currentState, setCurrentState] = useState<"Login" | "Sign Up">(
@@ -49,7 +48,7 @@ const Login = () => {
     defaultValues: {
       email: "",
       password: "",
-      ...(isSignUp && { name: "" }),
+      ...(isSignUp && { firstName: "", lastName: "" }),
     },
     mode: "onBlur",
   });
@@ -57,7 +56,7 @@ const Login = () => {
     form.reset({
       email: "",
       password: "",
-      ...(isSignUp && { name: "" }),
+      ...(isSignUp && { firstName: "", lastName: "" }),
     });
   }, [currentState, form, isSignUp]);
 
@@ -65,9 +64,10 @@ const Login = () => {
     try {
       const { email, password } = data;
       if (currentState === "Sign Up") {
-        const { name } = data as RegisterValues;
+        const { firstName, lastName } = data as RegisterValues;
         register.mutate({
-          name,
+          firstName,
+          lastName,
           email,
           password,
         });
@@ -144,26 +144,53 @@ const Login = () => {
 
                   {/* Name field - only shown during sign up */}
                   {currentState === "Sign Up" && (
-                    <Controller
-                      name="name"
-                      control={form.control}
-                      render={({ field, fieldState }) => (
-                        <Field data-invalid={fieldState.invalid}>
-                          <FieldLabel htmlFor="name">Name</FieldLabel>
-                          <Input
-                            {...field}
-                            id="name"
-                            aria-invalid={fieldState.invalid}
-                            placeholder="Enter your full name"
-                            autoComplete="name"
-                            disabled={isSubmitting}
-                          />
-                          {fieldState.invalid && (
-                            <FieldError>{fieldState.error?.message}</FieldError>
-                          )}
-                        </Field>
-                      )}
-                    />
+                    <>
+                      {" "}
+                      <Controller
+                        name="firstName"
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                          <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel htmlFor="name">First Name</FieldLabel>
+                            <Input
+                              {...field}
+                              id="firstName"
+                              aria-invalid={fieldState.invalid}
+                              placeholder="Enter your first name"
+                              autoComplete="first  name"
+                              disabled={isSubmitting}
+                            />
+                            {fieldState.invalid && (
+                              <FieldError>
+                                {fieldState.error?.message}
+                              </FieldError>
+                            )}
+                          </Field>
+                        )}
+                      />
+                      <Controller
+                        name="lastName"
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                          <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel htmlFor="name">Last Name</FieldLabel>
+                            <Input
+                              {...field}
+                              id="lastName"
+                              aria-invalid={fieldState.invalid}
+                              placeholder="Enter your last name"
+                              autoComplete="lastName"
+                              disabled={isSubmitting}
+                            />
+                            {fieldState.invalid && (
+                              <FieldError>
+                                {fieldState.error?.message}
+                              </FieldError>
+                            )}
+                          </Field>
+                        )}
+                      />
+                    </>
                   )}
 
                   <Controller

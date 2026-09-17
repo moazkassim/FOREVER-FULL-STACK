@@ -8,14 +8,7 @@ import productRouter from "./routes/productRoute.js";
 import cartRouter from "./routes/cartRoute.js";
 import orderRouter from "./routes/orderRoute.js";
 import corsOptions from "./config/cors.js";
-import cookieParser from "cookie-parser"; // ← add this
-console.log("\n=== IMPORT CHECK ===");
-console.log("userRouter:", typeof userRouter);
-console.log("productRouter:", typeof productRouter);
-console.log("cartRouter:", typeof cartRouter);
-console.log("orderRouter:", typeof orderRouter);
-console.log("====================\n");
-// App config
+import cookieParser from "cookie-parser";
 
 const app: Express = express();
 const port = process.env.PORT || 4000;
@@ -34,31 +27,12 @@ app.get("/", (_req: Request, res: Response) => {
 
 console.log("Mounting routers...");
 
-try {
-  app.use("/api/user", userRouter);
-  console.log("✅ userRouter mounted");
-} catch (e) {
-  console.error("❌ userRouter mount failed:", e);
-}
+app.use("/api/user", userRouter);
 
-try {
-  app.use("/api/product", productRouter);
-  console.log("✅ productRouter mounted");
-} catch (e) {
-  console.error("❌ productRouter mount failed:", e);
-}
+app.use("/api/product", productRouter);
 
-try {
-  app.use("/api/cart", cartRouter);
-  console.log("✅ cartRouter mounted");
-} catch (e) {
-  console.error("❌ cartRouter mount failed:", e);
-}
+app.use("/api/cart", cartRouter);
 
-try {
-  app.use("/api/order", orderRouter);
-  console.log("✅ orderRouter mounted");
-} catch (e) {
-  console.error("❌ orderRouter mount failed:", e);
-}
+app.use("/api/order", orderRouter);
+
 app.listen(port, () => console.log("Server started on port : " + port));

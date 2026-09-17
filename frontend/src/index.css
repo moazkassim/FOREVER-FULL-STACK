@@ -84,6 +84,9 @@ a.active hr {
   font-weight: 400;
   font-style: normal;
 }
+button {
+  cursor: pointer;
+}
 
 ::-webkit-scrollbar {
   display: none;

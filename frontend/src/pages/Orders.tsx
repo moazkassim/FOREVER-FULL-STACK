@@ -1,5 +1,4 @@
-import Title from "../components/Title";
-import { useCartStore } from "../stores/cartStore";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -22,6 +21,8 @@ import {
 import { Frown, Shirt } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useOrders } from "@/hooks/useOrder";
+import { useCartStore } from "@/stores/cartStore";
+import Title from "@/components/Title";
 const Orders = () => {
   const { currency } = useCartStore();
   const { data: orders, isPending, error } = useOrders();

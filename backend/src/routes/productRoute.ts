@@ -35,6 +35,5 @@ productRouter.post(
 productRouter.get("/list", listProduct);
 productRouter.get("/:productId", singleProduct);
 
-// TODO: implementing pagination
 
 export default productRouter;

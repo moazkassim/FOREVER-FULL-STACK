@@ -1,9 +1,5 @@
-import Title from "../components/Title";
-import CartTotal from "../components/CartTotal";
-import { assets } from "../assets/assets";
 import { toast } from "react-toastify";
-import { getErrorMessage } from "../utils/getErrorMessage";
-import { useCartStore } from "../stores/cartStore";
+
 import { useShallow } from "zustand/shallow";
 import { Input } from "@/components/ui/input";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
@@ -25,6 +21,14 @@ import {
   useCashOnDeliverPlaceOrder,
   useStripePlaceOrder,
 } from "@/hooks/useOrder";
+import { useCartStore } from "@/stores/cartStore";
+import { getErrorMessage } from "@/utils/getErrorMessage";
+import { assets } from "@/assets/assets";
+import Title from "@/components/Title";
+import CartTotal from "@/components/CartTotal";
+import { Navigate } from "react-router-dom";
+import { useProfile } from "@/hooks/useUser";
+import { useEffect } from "react";
 const FormField = ({
   name,
   control,
@@ -60,16 +64,14 @@ const PlaceOrder = () => {
       delivery_fee: state.delivery_fee,
     })),
   );
+  const { data: user } = useProfile();
   const codPlaceOrder = useCashOnDeliverPlaceOrder();
   const stripePlaceOrder = useStripePlaceOrder();
   const isPlacingOrder = codPlaceOrder.isPending || stripePlaceOrder.isPending;
+
   const { data: productData, isPending, error } = useProducts();
-  const { data: cart } = useCartItems();
-  let cartAmount: any;
-  if (productData?.products)
-    cartAmount = getCartAmount(productData.products, cart.cartProducts);
-  if (isPending) return "Loading...";
-  if (error) return "An error has occurred: " + error.message;
+  const { data: cart, isPending: cartLoading } = useCartItems();
+
   const form = useForm<PlaceOrderValues>({
     resolver: zodResolver(placeOrderSchema),
     defaultValues: {
@@ -86,6 +88,45 @@ const PlaceOrder = () => {
     },
     mode: "onBlur",
   });
+
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        street: user.street || "",
+        city: user.city || "",
+        state: user.state || "",
+        zipcode: user.zipcode || "",
+
+        country: user.location || "",
+      });
+    }
+  }, [user, form]);
+
+  if (cartLoading) {
+    return (
+      <div className="flex items-center justify-center h-[80vh]">
+        <div>Loading cart...</div>
+      </div>
+    );
+  }
+  if (
+    !cart ||
+    !cart.cartProducts ||
+    Object.keys(cart.cartProducts).length === 0
+  ) {
+    return <Navigate to="/collection" replace />;
+  }
+  let cartAmount: any;
+  if (productData?.products)
+    cartAmount = getCartAmount(productData.products, cart.cartProducts);
+
+  if (isPending) return "Loading...";
+  if (error) return "An error has occurred: " + error.message;
+
   const buildOrderItems = (): OrderItem[] => {
     const orderItems: OrderItem[] = [];
     Object.entries(cart.cartProducts).forEach(([productId, sizes]) => {
@@ -142,6 +183,7 @@ const PlaceOrder = () => {
       toast.error(getErrorMessage(error));
     }
   };
+
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}

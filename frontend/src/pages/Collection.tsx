@@ -16,14 +16,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import Title from "../components/Title";
-import ProductItem from "../components/ProductItem";
-import SimplePagination from "../components/SimplePagination";
-import { assets } from "../assets/assets";
-import { useProductStore } from "../stores/productStore";
+
 import { useShallow } from "zustand/shallow";
 import { useProducts } from "@/hooks/useProducts";
 import type { ProductType } from "@/types/product.types";
+import { useProductStore } from "@/stores/productStore";
+import Title from "@/components/Title";
+import { assets } from "@/assets/assets";
+import SimplePagination from "@/components/SimplePagination";
+import ProductItem from "@/components/ProductItem";
 const CATEGORIES = ["Men", "Women", "Kids"];
 const SUB_CATEGORIES = [
   { value: "Topwear", label: "Top Wear" },
@@ -65,18 +66,18 @@ const Collection = () => {
     setCategory((prev) =>
       prev.includes(value) ? prev.filter((i) => i !== value) : [...prev, value],
     );
-    setCurrentPage(1); 
+    setCurrentPage(1);
   }, []);
 
   const toggleSubCategory = useCallback((value: string) => {
     setSubCategory((prev) =>
       prev.includes(value) ? prev.filter((i) => i !== value) : [...prev, value],
     );
-    setCurrentPage(1); 
+    setCurrentPage(1);
   }, []);
   const handleSortChange = (value: string) => {
     setSortType(value);
-    setCurrentPage(1); 
+    setCurrentPage(1);
   };
   const clearFilters = useCallback(() => {
     setCategory([]);

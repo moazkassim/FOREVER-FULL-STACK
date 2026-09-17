@@ -27,9 +27,7 @@ function App() {
       ) : (
         <>
           <Navbar setToken={setToken} />
-          <div className="bg-red-500 text-white p-10 text-3xl font-bold">
-            IF YOU SEE THIS RED BOX, TAILWIND WORKS
-          </div>
+
           <hr />
           <div className=" flex w-full">
             <Sidebar />

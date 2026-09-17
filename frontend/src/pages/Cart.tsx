@@ -1,7 +1,4 @@
 import { useEffect, useState } from "react";
-import Title from "../components/Title";
-import CartTotal from "../components/CartTotal";
-import { useCartStore } from "../stores/cartStore";
 
 import { useNavigate } from "react-router-dom";
 import { useShallow } from "zustand/shallow";
@@ -28,7 +25,9 @@ import { useProducts } from "@/hooks/useProducts";
 import type { CartDisplayItem } from "@/types/cart.types";
 import type { ProductType } from "@/types/product.types";
 import { useCartItems, useUpdateCartMutation } from "@/hooks/useCart";
-// TODO:fix delete a cart item
+import { useCartStore } from "@/stores/cartStore";
+import Title from "@/components/Title";
+import CartTotal from "@/components/CartTotal";
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -46,9 +45,7 @@ const Cart = () => {
   const [cartData, setCartData] = useState<CartDisplayItem[]>([]);
   const { currency } = useCartStore(
     useShallow((state) => ({
-      // updateQuantity: state.updateQuantity,
       currency: state.currency,
-      // cartItems: state.cartItems,
     })),
   );
 

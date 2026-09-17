@@ -16,10 +16,10 @@ import { ToastContainer } from "react-toastify";
 import Verify from "./pages/Verify";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BugReportForm } from "./pages/BugReportForm";
-import Test from "./pages/Test";
 import { useSessionRestore } from "./hooks/useUser";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,11 +66,12 @@ export const App = () => {
                 element={<ResetPassword />}
               />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/product/:productId" element={<Product />} />
               <Route path="/place-order" element={<PlaceOrder />} />
               <Route path="/verify" element={<Verify />} />
-              <Route path="/test" element={<Test />} />
+
               <Route path="/BugReportForm" element={<BugReportForm />} />
             </Routes>
             <Footer />
